@@ -1265,10 +1265,22 @@ public class ConsoleReader implements ConsoleOperations {
         }
 
         int count = 0;
-
+        int termwidth = getTermwidth();
+        int line = getCursorPosition() / termwidth;
         count = moveCursor(-1 * num) * -1;
         // debug ("Deleting from " + buf.cursor + " for " + count);
         buf.buffer.delete(buf.cursor, buf.cursor + count);
+        int deletedLines = line - getCursorPosition() / termwidth;
+        if (deletedLines > 0) {
+            if (terminal.isANSISupported()) {
+                printCharacter(RESET_LINE);
+                flushConsole();
+                // send the ANSI code to move up
+                printString(((char) 27) + "[" + deletedLines + "A");
+                flushConsole();
+            }
+            redrawLine();
+        }
         drawBuffer(count);
 
         return count;
