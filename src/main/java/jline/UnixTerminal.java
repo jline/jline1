@@ -57,15 +57,14 @@ public class UnixTerminal extends Terminal {
     }
    
     protected void checkBackspace(){
-        String[] ttyConfigSplit = ttyConfig.split(":|=");
+        String[] splitConfig = ttyConfig.split(":|=");
 
-        if (ttyConfigSplit.length < 7)
-            return;
-        
-        if (ttyConfigSplit[6] == null)
-            return;
-	
-        backspaceDeleteSwitched = ttyConfigSplit[6].equals("7f");
+        if (splitConfig.length > 20 && "gfmt1".equals(splitConfig[0])) {
+            // BSD style stty -g format
+            backspaceDeleteSwitched = "7f".equals(splitConfig[20]);
+        } else if (splitConfig.length > 6) {
+            backspaceDeleteSwitched = "7f".equals(splitConfig[6]);
+        }
     }
     
     /**
@@ -129,8 +128,8 @@ public class UnixTerminal extends Terminal {
 
         if (backspaceDeleteSwitched)
             if (c == DELETE)
-                c = '\b';
-            else if (c == '\b')
+                c = BACKSPACE;
+            else if (c == BACKSPACE)
                 c = DELETE;
 
         // in Unix terminals, arrow keys are represented by
