@@ -661,7 +661,7 @@ public class ConsoleReader implements ConsoleOperations {
         short code = keybindings[c];
 
         if (debugger != null) {
-            debug("    translated: " + (int) c + ": " + code);
+            // debug("    translated: " + (int) c + ": " + code);
         }
 
         return new int[] { c, code };
@@ -794,12 +794,10 @@ public class ConsoleReader implements ConsoleOperations {
         }
 
         // send the ANSI code to clear the screen
-        printString(((char) 27) + "[2J");
-        flushConsole();
+        printANSISequence("2J");
 
         // then send the ANSI code to go to position 1,1
-        printString(((char) 27) + "[1;1H");
-        flushConsole();
+        printANSISequence("1;1H");
 
         redrawLine();
 
@@ -1031,7 +1029,7 @@ public class ConsoleReader implements ConsoleOperations {
         printString(buf.buffer.toString());
 
         if (buf.length() != buf.cursor) // not at end of line
-            back(buf.length() - buf.cursor); // sync
+            back(buf.length() - buf.cursor -1); // sync
     }
 
     /**
@@ -1119,14 +1117,19 @@ public class ConsoleReader implements ConsoleOperations {
      */
     private final void drawBuffer(final int clear) throws IOException {
         // debug ("drawBuffer: " + clear);
+        if (buf.cursor == buf.length() && clear == 0) {
+            return;
+        }
         char[] chars = buf.buffer.substring(buf.cursor).toCharArray();
         if (mask != null)
             Arrays.fill(chars, mask.charValue());
 
         printCharacters(chars);
-
         clearAhead(clear);
-        back(chars.length);
+        if (chars.length > 0) {
+            // don't ask, it works
+            back(Math.max(chars.length - 1, 1));
+        }
         flushConsole();
     }
 
@@ -1143,6 +1146,11 @@ public class ConsoleReader implements ConsoleOperations {
      */
     private final void clearAhead(final int num) throws IOException {
         if (num == 0) {
+            return;
+        }
+
+        if (terminal.isANSISupported()) {
+            printANSISequence("J");
             return;
         }
 
@@ -1166,6 +1174,22 @@ public class ConsoleReader implements ConsoleOperations {
      * Move the visual cursor backwards without modifying the buffer cursor.
      */
     private final void back(final int num) throws IOException {
+        if (num == 0) return;
+        if (terminal.isANSISupported()) {
+            int width = getTermwidth();
+            int cursor = getCursorPosition();
+            // debug("back: " + cursor + " + " + num + " on " + width);
+            int currRow = (cursor + num) / width;
+            int newRow = cursor / width;
+            int newCol = cursor % width + 1;
+            // debug("    old row: " + currRow + " new row: " + newRow);
+            if (newRow < currRow) {
+                printANSISequence((currRow - newRow) + "A");
+            }
+            printANSISequence(newCol + "G");
+            flushConsole();
+            return;
+        }
         printCharacters(BACKSPACE, num);
         flushConsole();
     }
@@ -1266,20 +1290,16 @@ public class ConsoleReader implements ConsoleOperations {
 
         int count = 0;
         int termwidth = getTermwidth();
-        int line = getCursorPosition() / termwidth;
+        int lines = getCursorPosition() / termwidth;
         count = moveCursor(-1 * num) * -1;
         // debug ("Deleting from " + buf.cursor + " for " + count);
         buf.buffer.delete(buf.cursor, buf.cursor + count);
-        int deletedLines = line - getCursorPosition() / termwidth;
-        if (deletedLines > 0) {
+        if (getCursorPosition() / termwidth != lines) {
             if (terminal.isANSISupported()) {
-                printCharacter(RESET_LINE);
-                flushConsole();
-                // send the ANSI code to move up
-                printString(((char) 27) + "[" + deletedLines + "A");
+                // debug("doing backspace redraw: " + getCursorPosition() + " on " + termwidth + ": " + lines);
+                printANSISequence("J");
                 flushConsole();
             }
-            redrawLine();
         }
         drawBuffer(count);
 
@@ -1296,15 +1316,7 @@ public class ConsoleReader implements ConsoleOperations {
     }
 
     private final boolean moveToEnd() throws IOException {
-        if (moveCursor(1) == 0) {
-            return false;
-        }
-
-        while (moveCursor(1) != 0) {
-            ;
-        }
-
-        return true;
+        return moveCursor(buf.length() - buf.cursor) > 0;
     }
 
     /**
@@ -1312,12 +1324,7 @@ public class ConsoleReader implements ConsoleOperations {
      * the buffer.
      */
     private final boolean deleteCurrentCharacter() throws IOException {
-        boolean success = buf.buffer.length() > 0;
-        if (!success) {
-            return false;
-        }
-
-        if (buf.cursor == buf.buffer.length()) {
+        if (buf.length() == 0 || buf.cursor == buf.length()) {
             return false;
         }
 
@@ -1365,20 +1372,20 @@ public class ConsoleReader implements ConsoleOperations {
     /**
      * Move the cursor <i>where</i> characters.
      *
-     * @param where
-     *            if less than 0, move abs(<i>where</i>) to the left,
-     *            otherwise move <i>where</i> to the right.
+     * @param num
+     *            if less than 0, move abs(<i>num</i>) to the left,
+     *            otherwise move <i>num</i> to the right.
      *
      * @return the number of spaces we moved
      */
     public final int moveCursor(final int num) throws IOException {
         int where = num;
 
-        if ((buf.cursor == 0) && (where < 0)) {
+        if ((buf.cursor == 0) && (where <= 0)) {
             return 0;
         }
 
-        if ((buf.cursor == buf.buffer.length()) && (where > 0)) {
+        if ((buf.cursor == buf.buffer.length()) && (where >= 0)) {
             return 0;
         }
 
@@ -1410,8 +1417,6 @@ public class ConsoleReader implements ConsoleOperations {
      * Move the cursor <i>where</i> characters, withough checking the current
      * buffer.
      *
-     * @see #where
-     *
      * @param where
      *            the number of characters to move to the right or left.
      */
@@ -1419,6 +1424,23 @@ public class ConsoleReader implements ConsoleOperations {
         // debug ("move cursor " + where + " ("
         // + buf.cursor + " => " + (buf.cursor + where) + ")");
         buf.cursor += where;
+
+        if (terminal.isANSISupported()) {
+            if (where < 0) {
+                back(Math.abs(where));
+            } else {
+                int width = getTermwidth();
+                int cursor = getCursorPosition();
+                int oldLine = (cursor - where) / width;
+                int newLine = cursor / width;
+                if (newLine > oldLine) {
+                    printANSISequence((newLine - oldLine) + "B");
+                }
+                printANSISequence(1 +(cursor % width) + "G");
+            }
+            flushConsole();
+            return;
+        }
 
         char c;
 
@@ -1462,7 +1484,7 @@ public class ConsoleReader implements ConsoleOperations {
         int c = terminal.readVirtualKey(in);
 
         if (debugger != null) {
-            debug("keystroke: " + c + "");
+            // debug("keystroke: " + c + "");
         }
 
         // clear any echo characters
@@ -1602,6 +1624,41 @@ public class ConsoleReader implements ConsoleOperations {
     private boolean isDelimiter(char c) {
         return !Character.isLetterOrDigit(c);
     }
+
+    private void printANSISequence(String sequence) throws IOException {
+        printCharacter(27);
+        printCharacter('[');
+        printString(sequence);
+        flushConsole();
+    }
+
+    /*
+    private int currentCol, currentRow;
+
+    private void getCurrentPosition() {
+        // check for ByteArrayInputStream to disable for unit tests
+        if (terminal.isANSISupported() && !(in instanceof ByteArrayInputStream)) {
+            try {
+                printANSISequence("[6n");
+                flushConsole();
+                StringBuffer b = new StringBuffer(8);
+                // position is sent as <ESC>[{ROW};{COLUMN}R
+                int r;
+                while((r = in.read()) > -1 && r != 'R') {
+                    if (r != 27 && r != '[') {
+                        b.append((char) r);
+                    }
+                }
+                String[] pos = b.toString().split(";");
+                currentRow = Integer.parseInt(pos[0]);
+                currentCol = Integer.parseInt(pos[1]);
+            } catch (Exception x) {
+                // no luck
+                currentRow = currentCol = -1;
+            }
+        }
+    }
+    */
 
     /**
      * Whether or not to add new commands to the history buffer.

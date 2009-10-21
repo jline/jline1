@@ -36,9 +36,10 @@ public class UnixTerminal extends Terminal {
     public static final short DEL_THIRD = 51;
     public static final short DEL_SECOND = 126;
 
-    private Map terminfo;
     private boolean echoEnabled;
     private String ttyConfig;
+    private String ttyProps;
+    private long ttyPropsLastFetched;
     private boolean backspaceDeleteSwitched = false;
     private static String sttyCommand =
         System.getProperty("jline.sttyCommand", "stty");
@@ -237,15 +238,18 @@ public class UnixTerminal extends Terminal {
         return val;
     }
 
-    private static int getTerminalProperty(String prop)
+    private int getTerminalProperty(String prop)
                                     throws IOException, InterruptedException {
+        // tty properties are cached so we don't have to worry too much about getting term widht/height
+        if (ttyProps == null || System.currentTimeMillis() - ttyPropsLastFetched > 1000) {
+            ttyProps = stty("-a");
+            ttyPropsLastFetched = System.currentTimeMillis();
+        }
         // need to be able handle both output formats:
         // speed 9600 baud; 24 rows; 140 columns;
         // and:
         // speed 38400 baud; rows = 49; columns = 111; ypixels = 0; xpixels = 0;
-        String props = stty("-a");
-
-        for (StringTokenizer tok = new StringTokenizer(props, ";\n");
+        for (StringTokenizer tok = new StringTokenizer(ttyProps, ";\n");
                  tok.hasMoreTokens();) {
             String str = tok.nextToken().trim();
 
