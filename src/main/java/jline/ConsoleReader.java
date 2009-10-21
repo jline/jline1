@@ -1126,9 +1126,13 @@ public class ConsoleReader implements ConsoleOperations {
 
         printCharacters(chars);
         clearAhead(clear);
-        if (chars.length > 0) {
-            // don't ask, it works
-            back(Math.max(chars.length - 1, 1));
+        if (terminal.isANSISupported()) {
+            if (chars.length > 0) {
+                // don't ask, it seems to work
+                back(Math.max(chars.length - 1, 1));
+            }
+        } else {
+            back(chars.length);
         }
         flushConsole();
     }
