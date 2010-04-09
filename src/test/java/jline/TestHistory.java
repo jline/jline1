@@ -29,6 +29,7 @@ public class TestHistory extends JLineTestCase {
         assertBuffer("", b);
 
         assertBuffer("test line 5", b = b.op(ConsoleReader.PREV_HISTORY));
+        assertBuffer("test line 5", b = b.op(ConsoleReader.PREV_CHAR));
         assertBuffer("test line 4", b = b.op(ConsoleReader.PREV_HISTORY));
         assertBuffer("test line 5", b = b.op(ConsoleReader.NEXT_HISTORY));
         assertBuffer("test line 4", b = b.op(ConsoleReader.PREV_HISTORY));
