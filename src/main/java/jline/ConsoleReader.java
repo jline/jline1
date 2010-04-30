@@ -1781,7 +1781,7 @@ public class ConsoleReader implements ConsoleOperations {
         int i = match.indexOf(searchTerm);
         printString("\r(reverse-i-search) `" + searchTerm + "': " + match + "\u001b[K");
         // FIXME: our ANSI using back() does not work here
-        printCharacters(BACKSPACE, match.length());
+        printCharacters(BACKSPACE, match.length() - i);
         flushConsole();
     }
 
