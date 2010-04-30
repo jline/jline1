@@ -87,6 +87,7 @@ public class ConsoleReader implements ConsoleOperations {
         names.put("COMPLETE", new Short(COMPLETE));
         names.put("EXIT", new Short(EXIT));
         names.put("CLEAR_LINE", new Short(CLEAR_LINE));
+        names.put("ABORT", new Short(ABORT));
 
         KEYMAP_NAMES = new TreeMap(Collections.unmodifiableMap(names));
     }
@@ -520,8 +521,10 @@ public class ConsoleReader implements ConsoleOperations {
                             break;
                             
                         case DELETE_PREV_CHAR:
-                            searchTerm.deleteCharAt(searchTerm.length() - 1);
-                            searchIndex = history.searchBackwards(searchTerm.toString());
+                            if (searchTerm.length() > 0) {
+                                searchTerm.deleteCharAt(searchTerm.length() - 1);
+                                searchIndex = history.searchBackwards(searchTerm.toString());
+                            }
                             break;
                             
                         case UNKNOWN:
@@ -623,6 +626,7 @@ public class ConsoleReader implements ConsoleOperations {
                             success = moveHistory(false);
                             break;
 
+                        case ABORT:
                         case REDISPLAY:
                             break;
 
@@ -669,9 +673,18 @@ public class ConsoleReader implements ConsoleOperations {
                             if (searchTerm != null) {
                                 previousSearchTerm = searchTerm.toString();
                             }
-                            searchTerm = new StringBuffer();
+                            searchTerm = new StringBuffer(buf.buffer);
                             state = SEARCH;
-                            printSearchStatus("", "");
+                            if (searchTerm.length() > 0) {
+                                searchIndex = history.searchBackwards(searchTerm.toString());
+                                if (searchIndex == -1) {
+                                    beep();
+                                }
+                                printSearchStatus(searchTerm.toString(),
+                                        searchIndex > -1 ? history.getHistory(searchIndex) : "");
+                            } else {
+                                printSearchStatus("", "");
+                            }
                             break;
 
                         case UNKNOWN:
@@ -1766,7 +1779,8 @@ public class ConsoleReader implements ConsoleOperations {
     public void printSearchStatus(String searchTerm, String match) throws IOException {
         int i = match.indexOf(searchTerm);
         printString("\r(reverse-i-search) `" + searchTerm + "': " + match + "\u001b[K");
-        back(match.length() - i);
+        // FIXME: our ANSI using back() does not work here
+        printCharacters(BACKSPACE, match.length());
         flushConsole();
     }
 
