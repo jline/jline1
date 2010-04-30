@@ -25,6 +25,7 @@ public interface ConsoleOperations {
     final char CTRL_D = 4;
     final char CTRL_E = 5;
     final char CTRL_F = 6;
+    final char CTRL_G = 7;
     final static char CTRL_K = 11;
     final static char CTRL_L = 12;
     final char CTRL_N = 14;
@@ -272,5 +273,10 @@ public interface ConsoleOperations {
      * Operation that clears whatever text is on the current line.
      */
     final static short CLEAR_LINE = -63;
+
+    /**
+     * Operation that aborts the current command (like searching)
+     */
+    final static short ABORT = -64;
 
 }

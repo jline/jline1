@@ -15,12 +15,10 @@ import java.util.*;
  * @author <a href="mailto:mwp1@cornell.edu">Marc Prud'hommeaux</a>
  */
 public class History {
+
     private List history = new ArrayList();
-
     private PrintWriter output = null;
-
     private int maxSize = 500;
-
     private int currentIndex = 0;
 
     /**
@@ -88,8 +86,7 @@ public class History {
      */
     public void addToHistory(final String buffer) {
         // don't append duplicates to the end of the buffer
-        if ((history.size() != 0)
-                && buffer.equals(history.get(history.size() - 1))) {
+        if ((history.size() != 0) && buffer.equals(history.get(history.size() - 1))) {
             return;
         }
 
@@ -112,8 +109,7 @@ public class History {
      */
     public void flushBuffer() throws IOException {
         if (getOutput() != null) {
-            for (Iterator i = history.iterator(); i.hasNext(); getOutput()
-                    .println((String) i.next())) {
+            for (Iterator i = history.iterator(); i.hasNext(); getOutput().println((String) i.next())) {
                 ;
             }
 
@@ -251,5 +247,53 @@ public class History {
         }
 
         return false;
+    }
+
+    /**
+     * Search backward in history from a given position.
+     *
+     * @param searchTerm substring to search for.
+     * @param startIndex the index from which on to search
+     * @return index where this substring has been found, or -1 else.
+     */
+    public int searchBackwards(String searchTerm, int startIndex) {
+        for (int i = startIndex - 1; i >= 0; i--) {
+            if (i >= size())
+                continue;
+            if (getHistory(i).indexOf(searchTerm) != -1) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * Search backwards in history from the current position.
+     *
+     * @param searchTerm substring to search for.
+     * @return index where the substring has been found, or -1 else.
+     */
+    public int searchBackwards(String s) {
+        return searchBackwards(s, getCurrentIndex());
+    }
+
+    /**
+     * Get the history string for the given index.
+     *
+     * @param index
+     * @return
+     */
+    public String getHistory(int index) {
+        return (String) history.get(index);
+    }
+
+    /**
+     * Set current index to given number.
+     * 
+     * @param index
+     */
+    public void setCurrentIndex(int index) {
+        if (index >= 0 && index < history.size())
+            currentIndex = index;
     }
 }
