@@ -683,6 +683,7 @@ public class ConsoleReader implements ConsoleOperations {
                                 printSearchStatus(searchTerm.toString(),
                                         searchIndex > -1 ? history.getHistory(searchIndex) : "");
                             } else {
+                                searchIndex = -1;
                                 printSearchStatus("", "");
                             }
                             break;
