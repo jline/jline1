@@ -298,6 +298,7 @@ public class UnixTerminal extends Terminal {
         int c;
         InputStream in = null;
         InputStream err = null;
+        OutputStream out = null;
 
         try {
 	        in = p.getInputStream();
@@ -311,11 +312,14 @@ public class UnixTerminal extends Terminal {
 	        while ((c = err.read()) != -1) {
 	            bout.write(c);
 	        }
+	
+	        out = p.getOutputStream();
 
 	        p.waitFor();
 	    } finally {
 		    try {in.close();} catch (Exception e) {}
 		    try {err.close();} catch (Exception e) {}
+		    try {out.close();} catch (Exception e) {}
 	    }
 
         String result = new String(bout.toByteArray());
