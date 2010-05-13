@@ -296,21 +296,27 @@ public class UnixTerminal extends Terminal {
 
         Process p = Runtime.getRuntime().exec(cmd);
         int c;
-        InputStream in;
+        InputStream in = null;
+        InputStream err = null;
 
-        in = p.getInputStream();
+        try {
+	        in = p.getInputStream();
 
-        while ((c = in.read()) != -1) {
-            bout.write(c);
-        }
+	        while ((c = in.read()) != -1) {
+	            bout.write(c);
+	        }
 
-        in = p.getErrorStream();
+	        err = p.getErrorStream();
 
-        while ((c = in.read()) != -1) {
-            bout.write(c);
-        }
+	        while ((c = err.read()) != -1) {
+	            bout.write(c);
+	        }
 
-        p.waitFor();
+	        p.waitFor();
+	    } finally {
+		    try {in.close();} catch (Exception e) {}
+		    try {err.close();} catch (Exception e) {}
+	    }
 
         String result = new String(bout.toByteArray());
 
