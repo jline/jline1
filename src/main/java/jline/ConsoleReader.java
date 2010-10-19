@@ -211,8 +211,8 @@ public class ConsoleReader implements ConsoleOperations {
         if (bindings == null) {
             try {
                 String bindingFile = System.getProperty("jline.keybindings",
-                    new File(System.getProperty("user.home",
-                        ".jlinebindings.properties")).getAbsolutePath());
+                    new File(System.getProperty("user.home"),
+                        ".jlinebindings.properties").getAbsolutePath());
 
                 if (new File(bindingFile).isFile()) {
                     bindings = new FileInputStream(new File(bindingFile));
