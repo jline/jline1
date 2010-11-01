@@ -58,14 +58,7 @@ public class UnixTerminal extends Terminal {
    
     protected void checkBackspace(){
         String[] ttyConfigSplit = ttyConfig.split(":|=");
-
-        if (ttyConfigSplit.length < 7)
-            return;
-        
-        if (ttyConfigSplit[6] == null)
-            return;
-	
-        backspaceDeleteSwitched = ttyConfigSplit[6].equals("7f");
+        backspaceDeleteSwitched = ttyConfigSplit.length >= 7 && "7f".equals(ttyConfigSplit[6]);
     }
     
     /**
