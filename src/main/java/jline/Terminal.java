@@ -175,6 +175,10 @@ public abstract class Terminal implements ConsoleOperations {
     public abstract void disableEcho();
 
     public InputStream getDefaultBindings() {
-        return Terminal.class.getResourceAsStream("keybindings.properties");
+        // Mac bindings are slightly different from Unix/Linux.
+        // For instance, the Delete key behavior is different between them.
+        return Terminal.class.getResourceAsStream(
+                System.getProperty("os.name").toLowerCase().startsWith("mac") ?
+                    "keybindings-mac.properties" : "keybindings.properties");
     }
 }
