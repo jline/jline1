@@ -85,6 +85,8 @@ public class ClassNameCompletor extends SimpleCompletor {
              {
                 continue;
             }
+            if (!file.toString().endsWith (".jar"))
+                continue;
 
             JarFile jf = new JarFile(file);
 
