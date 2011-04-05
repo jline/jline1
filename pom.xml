@@ -53,7 +53,7 @@ To make a bundle and request that ibilio upload it, do:
   <artifactId>jline</artifactId>
   <packaging>jar</packaging>
   <name>JLine</name>
-  <version>0.9.95-SNAPSHOT</version>
+  <version>1.0-SNAPSHOT</version>
   <description>JLine is a java library for reading and editing user input in console applications. It features tab-completion, command history, password masking, customizable keybindings, and pass-through handlers to use to chain to other console applications.</description>
   <url>http://jline.sourceforge.net</url>
   <issueManagement>
@@ -76,6 +76,11 @@ To make a bundle and request that ibilio upload it, do:
       <name>Marc Prud'hommeaux</name>
       <email>mwp1@cornell.edu</email>
     </developer>
+    <developer>
+      <id>headius</id>
+      <name>Charles Oliver Nutter</name>
+      <email>headius@headius.com</email>
+    </developer>
   </developers>
   <licenses>
     <license>
@@ -84,9 +89,9 @@ To make a bundle and request that ibilio upload it, do:
     </license>
   </licenses>
   <scm>
-    <connection>scm:cvs:pserver:anonymous@jline.cvs.sourceforge.net:/cvsroot/jline:jline</connection>
-    <developerConnection>scm:cvs:ext:${maven.username}@jline.cvs.sourceforge.net:/cvsroot/jline:jline</developerConnection>
-    <url>http://jline.cvs.sourceforge.net/jline</url>
+    <connection>git://github.com/jline/jline.git</connection>
+    <developerConnection>git@github.com:jline/jline.git</developerConnection>
+    <url>https://github.com/jline/jline</url>
   </scm>
   <dependencies>
     <dependency>
@@ -99,29 +104,10 @@ To make a bundle and request that ibilio upload it, do:
 
   <build>
     <plugins>
-      <!--
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>jalopy-maven-plugin</artifactId>
-        <version>1.0-SNAPSHOT</version>
-        <configuration>
-          <fileFormat>UNIX</fileFormat>
-          <convention>codestyle.xml</convention>
-        </configuration>
-        <executions>
-          <execution>
-            <goals>
-              <goal>format</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-      -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
-          <!-- <testFailureIgnore>true</testFailureIgnore> -->
           <useFile>false</useFile>
           <trimStackTrace>false</trimStackTrace>
         </configuration>
@@ -211,9 +197,6 @@ To make a bundle and request that ibilio upload it, do:
         <reportSets>
           <reportSet>
             <reports>
-              <!-- <report>dependencies</report> -->
-              <!-- <report>cim</report> -->
-              <!-- <report>cobertura</report> -->
               <report>project-team</report>
               <report>mailing-list</report>
               <report>issue-tracking</report>
