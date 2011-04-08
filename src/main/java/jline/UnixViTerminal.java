@@ -84,14 +84,14 @@ public class UnixViTerminal extends UnixTerminal {
 
         if(isViDeleteMode()) {
             setDeleteMode(false);
-            if(c == VI_W)
-                return ConsoleOperations.DELETE_PREV_WORD;
-            else if(c == VI_D)
-                return ConsoleOperations.CLEAR_LINE;
+            if(c == VI_B)
+                return CTRL_W;
+            //else if(c == VI_D)
+            //    return ConsoleOperations.CLEAR_LINE;
             else if(c == VI_H)
-                return ConsoleOperations.DELETE_PREV_CHAR;
+                return CTRL_H;
             else if(c == VI_L)
-                return ConsoleOperations.DELETE_NEXT_CHAR;
+                return DELETE;
 
             //TODO: much to add
             return 0;
@@ -116,28 +116,30 @@ public class UnixViTerminal extends UnixTerminal {
         //else if(c == VI_SHIFT_W)
         //    return ConsoleOperations.NEXT_SPACE_WORD;
         // wont work atm since MOVE_TO_BEG = -1
-        //else if(c == VI_0)
-        //    return ConsoleOperations.MOVE_TO_BEG;
-        /*
+        else if(c == VI_0)
+            return CTRL_A;
         else if(c == VI_$)
-            return ConsoleOperations.MOVE_TO_END;
+            return CTRL_E;
+
         //else if(c == VI_P) //TODO
         //   return ConsoleOperations.PASTE;
         else if(c == VI_S) {
             switchEditMode();
-            return ConsoleOperations.DELETE_NEXT_CHAR;
+            return DELETE;
         }
+        /* TODO:
         else if(c == VI_SHIFT_S) {
             switchEditMode();
             return ConsoleOperations.CLEAR_LINE;
         }
+        */
         else if(c == VI_A) {
             switchEditMode();
-            return ConsoleOperations.NEXT_CHAR;
+            return CTRL_F;
         }
         else if(c == VI_SHIFT_A) {
             switchEditMode();
-            return ConsoleOperations.MOVE_TO_END;
+            return CTRL_E;
         }
         else if(c == VI_I) {
             switchEditMode();
@@ -145,13 +147,13 @@ public class UnixViTerminal extends UnixTerminal {
         }
         else if(c == VI_SHIFT_I) {
             switchEditMode();
-            return ConsoleOperations.MOVE_TO_BEG;
+            return CTRL_A;
         }
         else if(c == VI_D) {
             setDeleteMode(true);
             return 0;
         }
-        */
+
         /*
         else if(c == VI_SHIFT_D) {
             return ConsoleOperations.
