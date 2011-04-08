@@ -585,8 +585,16 @@ public class ConsoleReader implements ConsoleOperations {
                     success = previousWord();
                     break;
 
+                case PREV_SPACE_WORD:
+                    success = previousSpaceWord();
+                    break;
+
                 case NEXT_WORD:
                     success = nextWord();
+                    break;
+
+                case NEXT_SPACE_WORD:
+                    success = nextSpaceWord();
                     break;
 
                 case START_OF_HISTORY:
@@ -663,6 +671,7 @@ public class ConsoleReader implements ConsoleOperations {
         // extract the appropriate key binding
         short code = keybindings[c];
 
+        //System.out.println("    translated: " + (int) c +": "+(char) c+ ": " + code);
         if (debugger != null) {
             debug("    translated: " + (int) c + ": " + code);
         }
@@ -1333,12 +1342,35 @@ public class ConsoleReader implements ConsoleOperations {
         return true;
     }
 
+    private final boolean previousSpaceWord() throws IOException {
+        while (isSpace(buf.current()) && (moveCursor(-1) != 0)) {
+            ;
+        }
+
+        while (!isSpace(buf.current()) && (moveCursor(-1) != 0)) {
+            ;
+        }
+
+        return true;
+    }
     private final boolean nextWord() throws IOException {
         while (isDelimiter(buf.current()) && (moveCursor(1) != 0)) {
             ;
         }
 
         while (!isDelimiter(buf.current()) && (moveCursor(1) != 0)) {
+            ;
+        }
+
+        return true;
+    }
+
+    private final boolean nextSpaceWord() throws IOException {
+        while (isSpace(buf.current()) && (moveCursor(1) != 0)) {
+            ;
+        }
+
+        while (!isSpace(buf.current()) && (moveCursor(1) != 0)) {
             ;
         }
 
@@ -1596,6 +1628,16 @@ public class ConsoleReader implements ConsoleOperations {
      */
     private boolean isDelimiter(char c) {
         return !Character.isLetterOrDigit(c);
+    }
+
+    /**
+     * Checks to see if the specified character is a space.
+     *
+     * @param c
+     * @return
+     */
+    private boolean isSpace(char c) {
+        return Character.isWhitespace(c);
     }
 
     /**
