@@ -60,6 +60,10 @@ public class UnixTerminal extends Terminal {
         String[] ttyConfigSplit = ttyConfig.split(":|=");
         backspaceDeleteSwitched = ttyConfigSplit.length >= 7 && "7f".equals(ttyConfigSplit[6]);
     }
+
+    boolean isBackspaceDeleteSwitched() {
+        return backspaceDeleteSwitched;
+    }
     
     /**
      *  Remove line-buffered input by invoking "stty -icanon min 1"
@@ -120,7 +124,7 @@ public class UnixTerminal extends Terminal {
     public int readVirtualKey(InputStream in) throws IOException {
         int c = readCharacter(in);
 
-        if (backspaceDeleteSwitched)
+        if (isBackspaceDeleteSwitched())
             if (c == DELETE)
                 c = '\b';
             else if (c == '\b')
