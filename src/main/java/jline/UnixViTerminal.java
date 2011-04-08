@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
+ * A simple Terminal that supports vi bindings.
+ *
  * @author Ståle W. Pedersen <stale.pedersen@jboss.org>
  */
 public class UnixViTerminal extends UnixTerminal {
@@ -32,13 +34,24 @@ public class UnixViTerminal extends UnixTerminal {
     private static final short VI_SHIFT_B = 66;
     private static final short VI_W = 119;
     private static final short VI_SHIFT_W = 87;
-    private boolean viDeleteMode = false;
+
+    private static final short VI_ENTER = 10;
+    private static final short VI_PERIOD = 46;
+
+    private boolean deleteMode = false;
     private boolean editMode = true;
+    private boolean changeMode = false;
+
+    private short latestAction = 0;
 
     public int readVirtualKey(InputStream in) throws IOException {
-        //return super.readVirtualKey(in);
         int c = readCharacter(in);
 
+        if (isBackspaceDeleteSwitched())
+            if (c == DELETE)
+                c = '\b';
+            else if (c == '\b')
+                c = DELETE;
 
         if (c == ARROW_START) {
             switchEditMode();
@@ -53,6 +66,16 @@ public class UnixViTerminal extends UnixTerminal {
             return c;
         }
 
+        // handle unicode characters, thanks for a patch from amyi@inf.ed.ac.uk
+        if (c > 128) {
+            // handle unicode characters longer than 2 bytes,
+            // thanks to Marc.Herbert@continuent.com
+            replayStream.setInput(c, in);
+            //replayReader = new InputStreamReader(replayStream, encoding);
+            c = replayReader.read();
+
+        }
+
         return c;
     }
 
@@ -63,43 +86,99 @@ public class UnixViTerminal extends UnixTerminal {
     private void switchEditMode() {
         if(editMode)
             editMode = false;
-        else
+        else {
             editMode = true;
+            setChangeMode(false);
+            setDeleteMode(false);
+        }
     }
 
     private void setDeleteMode(boolean deleteMode) {
-        viDeleteMode = deleteMode;
+        this.deleteMode = deleteMode;
     }
 
-    private boolean isViDeleteMode() {
-        return viDeleteMode;
+    private boolean isDeleteMode() {
+        return deleteMode;
+    }
+
+    private void setChangeMode(boolean b) {
+        changeMode = b;
+    }
+
+    private boolean isChangeMode() {
+        return changeMode;
     }
 
     private int enterCommandMode(int c) throws IOException {
         //int c = readCharacter(in);
-//        System.out.println("in commandmode, got:"+((char) c)+"which is:"+c);
+        //System.out.println("in commandmode, got:"+((char) c)+"which is:"+c);
+
         // an extra check because of "i"
         if(isInEditMode())
             return c;
 
-        if(isViDeleteMode()) {
+        if(isDeleteMode()) {
             setDeleteMode(false);
-            if(c == VI_B)
+            if(c == VI_B) {
+                latestAction = CTRL_W;
                 return CTRL_W;
-            //else if(c == VI_D)
-            //    return ConsoleOperations.CLEAR_LINE;
-            else if(c == VI_H)
+            }
+            else if(c == VI_W) {
+                //latestAction = CTRL_W;
+                return DELETE; //TODO: fix this!
+            }
+            else if(c == VI_D) {
+                latestAction = CTRL_SHIFT_K;
+                return CTRL_SHIFT_K;
+            }
+            else if(c == VI_$) {
+                latestAction = CTRL_K;
+                return CTRL_K;
+            }
+            else if(c == VI_H) {
+                latestAction = CTRL_H;
                 return CTRL_H;
-            else if(c == VI_L)
+            }
+            else if(c == VI_L) {
+                latestAction =  DELETE;
                 return DELETE;
+            }
+            else if(c == VI_0) {
+                latestAction = CTRL_U;
+                return CTRL_U;
+            }
 
-            //TODO: much to add
             return 0;
         }
 
-        if(c == VI_X)
-            return DELETE;
-        else if(c == VI_H)
+        if(isChangeMode()) {
+            setChangeMode(false);
+            if(c == VI_B) {
+                switchEditMode();
+                return CTRL_W;
+            }
+            else if(c == VI_$) {
+                switchEditMode();
+                return CTRL_K;
+            }
+            else if(c == VI_H) {
+                switchEditMode();
+                return CTRL_H;
+            }
+            else if(c == VI_L) {
+                switchEditMode();
+                return DELETE;
+            }
+            else if(c == VI_0) {
+                switchEditMode();
+                return CTRL_U;
+            }
+
+            return 0;
+        }
+
+        //movement
+        if(c == VI_H)
             return CTRL_B;
         else if(c == VI_L)
             return CTRL_F;
@@ -110,29 +189,31 @@ public class UnixViTerminal extends UnixTerminal {
         else if(c == VI_B)
             return CTRL_G;
         else if(c == VI_SHIFT_B)
-            return CTRL_G; //TODO: should improve this to go to next space
+            return CTRL_SHIFT_G;
         else if(c == VI_W)
             return CTRL_O;
-        //else if(c == VI_SHIFT_W)
-        //    return ConsoleOperations.NEXT_SPACE_WORD;
-        // wont work atm since MOVE_TO_BEG = -1
+        else if(c == VI_SHIFT_W)
+            return CTRL_SHIFT_O;
         else if(c == VI_0)
             return CTRL_A;
         else if(c == VI_$)
             return CTRL_E;
 
+        //edit
+        else if(c == VI_X) {
+            latestAction = DELETE;
+            return DELETE;
+        }
         //else if(c == VI_P) //TODO
         //   return ConsoleOperations.PASTE;
         else if(c == VI_S) {
             switchEditMode();
             return DELETE;
         }
-        /* TODO:
         else if(c == VI_SHIFT_S) {
             switchEditMode();
-            return ConsoleOperations.CLEAR_LINE;
+            return CTRL_SHIFT_K;
         }
-        */
         else if(c == VI_A) {
             switchEditMode();
             return CTRL_F;
@@ -153,12 +234,24 @@ public class UnixViTerminal extends UnixTerminal {
             setDeleteMode(true);
             return 0;
         }
-
-        /*
         else if(c == VI_SHIFT_D) {
-            return ConsoleOperations.
+            latestAction = CTRL_K;
+            return CTRL_K;
         }
-        */
+        else if(c == VI_C) {
+            setChangeMode(true);
+        }
+        else if(c == VI_SHIFT_C) {
+            switchEditMode();
+            return CTRL_K;
+        }
+        else if(c == VI_ENTER) {
+            switchEditMode();
+            return c;
+        }
+        else if(c == VI_PERIOD) {
+            return latestAction;
+        }
 
         return 0;
     }
