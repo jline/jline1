@@ -433,24 +433,24 @@ public class ConsoleReader implements ConsoleOperations {
      * @return length after stripping ANSI codes
      */
     int getStrippedAnsiLength(String ansiString) {
-    	if (ansiString ==  null) return 0;
-    	boolean inAnsi = false;
-    	int strippedLength = 0;
-    	char[] chars = ansiString.toCharArray(); 
-    	for (int i = 0; i < chars.length; i++) {
-			char c = chars[i];
-			if (!inAnsi && c == 27 && i < chars.length - 1 && chars[i+1] == '[') {
-				i++; // skip '['
-				inAnsi = true;
-			} else if (inAnsi) {
-				if (64 <= c && c <= 126) {
-					inAnsi = false;
-				}
-			} else {
-				strippedLength++;
-			}
-    	}
-    	return strippedLength;
+        if (ansiString ==  null) return 0;
+        boolean inAnsi = false;
+        int strippedLength = 0;
+        char[] chars = ansiString.toCharArray();
+        for (int i = 0; i < chars.length; i++) {
+            char c = chars[i];
+            if (!inAnsi && c == 27 && i < chars.length - 1 && chars[i+1] == '[') {
+                i++; // skip '['
+                inAnsi = true;
+            } else if (inAnsi) {
+                if (64 <= c && c <= 126) {
+                    inAnsi = false;
+                }
+            } else {
+                strippedLength++;
+            }
+        }
+        return strippedLength;
     }
 
     public String readLine(final String prompt) throws IOException {
