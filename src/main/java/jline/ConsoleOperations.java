@@ -30,15 +30,15 @@ public interface ConsoleOperations {
     final static char CTRL_I = 9;
     final static char CTRL_K = 11;
     final static char CTRL_L = 12;
-    final static char CTRL_U = 21;
     final static char CTRL_N = 14;
     final static char CTRL_P = 16;
+    final static char CTRL_U = 21;
     final static char CTRL_W = 23;
     final static char CTRL_O = 24;
     final static char CTRL_SHIFT_K = 25; //clear the whole line
     final static char CTRL_SHIFT_O = 26; //next space word
     final static char CTRL_SHIFT_G = 27; //prev space word
-    final static char CTRL_OB = 27;
+    final static char CTRL_OB = 28;
     final static char DELETE = 127;
     final static char CTRL_QM = 127;
 
@@ -281,5 +281,10 @@ public interface ConsoleOperations {
      * Operation that clears whatever text is on the current line.
      */
     final static short CLEAR_LINE = -63;
+
+    /**
+     * Operation that aborts the current command (like searching)
+     */
+    final static short ABORT = -64;
 
 }
