@@ -670,8 +670,8 @@ public class ConsoleReader implements ConsoleOperations {
                             break;
 
                         case CLEAR_LINE:
-                            moveInternal(-(buf.buffer.length()));
-                            killLine();
+                            setCursorPosition(0);
+                            success = killLine();
                             break;
 
                         case INSERT:
