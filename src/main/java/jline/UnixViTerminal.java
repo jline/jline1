@@ -187,7 +187,8 @@ public class UnixViTerminal extends UnixTerminal {
         else if(c == VI_K)
             return CTRL_P;
         else if(c == VI_B)
-            return CTRL_G;
+            return CTRL_X;
+        //  return CTRL_G;
         else if(c == VI_SHIFT_B)
             return CTRL_SHIFT_G;
         else if(c == VI_W)
