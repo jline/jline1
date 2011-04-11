@@ -34,11 +34,12 @@ public interface ConsoleOperations {
     final static char CTRL_P = 16;
     final static char CTRL_U = 21;
     final static char CTRL_W = 23;
-    final static char CTRL_O = 24;
-    final static char CTRL_SHIFT_K = 25; //clear the whole line
-    final static char CTRL_SHIFT_O = 26; //next space word
-    final static char CTRL_SHIFT_G = 27; //prev space word
-    final static char CTRL_OB = 28;
+    final static char CTRL_X = 24;
+    final static char CTRL_O = 25;
+    final static char CTRL_SHIFT_K = 26; //clear the whole line
+    final static char CTRL_SHIFT_O = 27; //next space word
+    final static char CTRL_SHIFT_G = 28; //prev space word
+    final static char CTRL_OB = 29;
     final static char DELETE = 127;
     final static char CTRL_QM = 127;
 
