@@ -424,7 +424,33 @@ public class ConsoleReader implements ConsoleOperations {
     int getCursorPosition() {
         // FIXME: does not handle anything but a line with a prompt
         // absolute position
-        return ((prompt == null) ? 0 : prompt.length()) + buf.cursor;
+        return getStrippedAnsiLength(prompt) + buf.cursor;
+    }
+
+    /**
+     * Strips ANSI escape sequences starting with CSI and ending with char in range 64-126
+     * @param ansiString String possibly containing ANSI codes, may be null
+     * @return length after stripping ANSI codes
+     */
+    int getStrippedAnsiLength(String ansiString) {
+    	if (ansiString ==  null) return 0;
+    	boolean inAnsi = false;
+    	int strippedLength = 0;
+    	char[] chars = ansiString.toCharArray(); 
+    	for (int i = 0; i < chars.length; i++) {
+			char c = chars[i];
+			if (!inAnsi && c == 27 && i < chars.length - 1 && chars[i+1] == '[') {
+				i++; // skip '['
+				inAnsi = true;
+			} else if (inAnsi) {
+				if (64 <= c && c <= 126) {
+					inAnsi = false;
+				}
+			} else {
+				strippedLength++;
+			}
+    	}
+    	return strippedLength;
     }
 
     public String readLine(final String prompt) throws IOException {
