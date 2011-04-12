@@ -37,6 +37,7 @@ public class UnixViTerminal extends UnixTerminal {
 
     private static final short VI_ENTER = 10;
     private static final short VI_PERIOD = 46;
+    private static final short VI_U = 117;
 
     private boolean deleteMode = false;
     private boolean editMode = true;
@@ -252,6 +253,9 @@ public class UnixViTerminal extends UnixTerminal {
         }
         else if(c == VI_PERIOD) {
             return latestAction;
+        }
+        else if(c == VI_U) {
+            return CTRL_Z;
         }
 
         return 0;

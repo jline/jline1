@@ -133,6 +133,8 @@ public class ConsoleReader implements ConsoleOperations {
     private String previousSearchTerm = "";
     private int searchIndex = -1;
 
+    private Undo undoBuffer;
+
     /**
      * Adding a triggered Action allows to give another course of action
      * if a character passed the preprocessing.
@@ -207,6 +209,8 @@ public class ConsoleReader implements ConsoleOperations {
                 }
             }
         }
+
+        undoBuffer = new Undo();
 
         if (bindings == null) {
             bindings = terminal.getDefaultBindings();
@@ -582,27 +586,33 @@ public class ConsoleReader implements ConsoleOperations {
                             break;
 
                         case KILL_LINE: // CTRL-K
+                            doAction();
                             success = killLine();
                             break;
 
                         case CLEAR_SCREEN: // CTRL-L
+                            doAction();
                             success = clearScreen();
                             break;
 
                         case KILL_LINE_PREV: // CTRL-U
+                            doAction();
                             success = resetLine();
                             break;
 
                         case NEWLINE: // enter
+                            clearUndo();
                             moveToEnd();
                             printNewline(); // output newline
                             return finishBuffer();
 
                         case DELETE_PREV_CHAR: // backspace
+                            doAction();
                             success = backspace();
                             break;
 
                         case DELETE_NEXT_CHAR: // delete
+                            doAction();
                             success = deleteCurrentCharacter();
                             break;
 
@@ -632,10 +642,12 @@ public class ConsoleReader implements ConsoleOperations {
                             break;
 
                         case PASTE:
+                            doAction();
                             success = paste();
                             break;
 
                         case DELETE_PREV_WORD:
+                            doAction();
                             success = deletePreviousWord();
                             break;
 
@@ -674,6 +686,11 @@ public class ConsoleReader implements ConsoleOperations {
                             success = killLine();
                             break;
 
+                        case UNDO:
+                            success = undo();
+                            //drawLine();
+                            break;
+
                         case INSERT:
                             buf.setOvertyping(!buf.isOvertyping());
                             break;
@@ -704,6 +721,10 @@ public class ConsoleReader implements ConsoleOperations {
                                 if (action != null) {
                                     action.actionPerformed(null);
                                 } else {
+                                    if(!undoBuffer.isEmpty()) {
+                                        //System.out.println("Size of undoBuffer: "+undoBuffer.size());
+                                        doAction();
+                                    }
                                     putChar(c, true);
                                 }
                             } else {
@@ -1836,5 +1857,29 @@ public class ConsoleReader implements ConsoleOperations {
         printString("\u001b[2K"); // ansi/vt100 for clear whole line
         redrawLine();
         flushConsole();
+    }
+
+    private boolean undo() throws IOException {
+        UndoAction ua = undoBuffer.getNext();
+        if(ua != null) {
+            setCursorPosition(0);
+            killLine();
+            this.buf.clearBuffer();
+            this.buf.write(ua.getBuffer());
+            setCursorPosition(ua.getCursorPosition()-prompt.length());
+            redrawLine();
+            return true;
+        }
+        else
+            return false;
+    }
+
+    private void doAction() throws IOException {
+        UndoAction ua = new UndoAction(getCursorPosition(), this.buf.getBuffer().toString());
+        undoBuffer.addUndo(ua);
+    }
+
+    private void clearUndo() {
+        undoBuffer.clear();
     }
 }

@@ -40,6 +40,7 @@ public interface ConsoleOperations {
     final static char CTRL_SHIFT_O = 27; //next space word
     final static char CTRL_SHIFT_G = 28; //prev space word
     final static char CTRL_OB = 29;
+    final static char CTRL_Z = 30;
     final static char DELETE = 127;
     final static char CTRL_QM = 127;
 
