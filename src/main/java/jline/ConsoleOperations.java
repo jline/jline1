@@ -34,14 +34,16 @@ public interface ConsoleOperations {
     final static char CTRL_P = 16;
     final static char CTRL_U = 21;
     final static char CTRL_W = 23;
-    final static char CTRL_X = 24;
-    final static char CTRL_O = 25;
-    final static char CTRL_SHIFT_K = 26; //clear the whole line
-    final static char CTRL_SHIFT_O = 27; //next space word
-    final static char CTRL_SHIFT_G = 28; //prev space word
+    final static char CTRL_X = 24; // prev word
+    final static char CTRL_O = 10025; // next word
+    final static char CTRL_SHIFT_K = 10026; //clear the whole line
+    final static char CTRL_SHIFT_O = 10027; //next space word
+    final static char CTRL_SHIFT_G = 10028; //prev space word
     final static char CTRL_OB = 29;
-    final static char CTRL_Z = 30;
-    final static char CTRL_M = 31; // delete next word
+    final static char CTRL_Z = 10030;
+    final static char CTRL_M = 10031; // delete next word
+    final static char CTRL_MM = 10032; // delete next space word
+    final static char CTRL_WW = 10033; // delete prev space word
     final static char DELETE = 127;
     final static char CTRL_QM = 127;
 
@@ -149,6 +151,16 @@ public interface ConsoleOperations {
      *  Operation that moved to the end of the current word.
      */
     final short TO_END_WORD = -29;
+
+    /**
+     * Operation that deletes the next word in the buffer delimited by space.
+     */
+    final short DELETE_PREV_SPACE_WORD = -30;
+
+    /**
+     * Operation that deletes the next word in the buffer delimited by space.
+     */
+    final short DELETE_NEXT_SPACE_WORD = -32;
 
     /**
      *  Operation that

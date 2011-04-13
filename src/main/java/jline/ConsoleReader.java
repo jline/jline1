@@ -84,6 +84,8 @@ public class ConsoleReader implements ConsoleOperations {
         names.put("NEXT_WORD", new Short(NEXT_WORD));
         names.put("DELETE_NEXT_CHAR", new Short(DELETE_NEXT_CHAR));
         names.put("DELETE_NEXT_WORD", new Short(DELETE_NEXT_WORD));
+        names.put("DELETE_NEXT_SPACE_WORD", new Short(DELETE_NEXT_SPACE_WORD));
+        names.put("DELETE_PREV_SPACE_WORD", new Short(DELETE_PREV_SPACE_WORD));
         names.put("CHANGE_CASE", new Short(CHANGE_CASE));
         names.put("COMPLETE", new Short(COMPLETE));
         names.put("EXIT", new Short(EXIT));
@@ -683,6 +685,16 @@ public class ConsoleReader implements ConsoleOperations {
                             success = deletePreviousWord();
                             break;
 
+                        case DELETE_NEXT_SPACE_WORD:
+                            doAction();
+                            success = deleteNextSpaceWord();
+                            break;
+
+                        case DELETE_PREV_SPACE_WORD:
+                            doAction();
+                            success = deletePreviousSpaceWord();
+                            break;
+
                         case PREV_WORD:
                             success = previousWord();
                             break;
@@ -806,7 +818,8 @@ public class ConsoleReader implements ConsoleOperations {
         // extract the appropriate key binding
         short code = keybindings[c];
 
-        //System.out.println("    translated: " + (int) c +": "+(char) c+ ": " + code);
+//        if(code != -99)
+//            System.out.println("    translated: " + (int) c +": "+(char) c+ ": " + code);
         if (debugger != null) {
             // debug("    translated: " + (int) c + ": " + code);
         }
@@ -1550,12 +1563,32 @@ public class ConsoleReader implements ConsoleOperations {
         return true;
     }
 
+    private final boolean deletePreviousSpaceWord() throws IOException {
+        while (isSpace(buf.current()) && backspace()) {
+            ;
+        }
+
+        while (!isSpace(buf.current()) && backspace()) {
+            ;
+        }
+
+        return true;
+    }
+
     private final boolean deleteNextWord() throws IOException {
         while(buf.cursor < buf.length() && !isDelimiter(buf.buffer.charAt(buf.cursor)))
             deleteCurrentCharacter();
         return true;
     }
 
+    private final boolean deleteNextSpaceWord() throws IOException {
+        while(buf.cursor < buf.length() && !isSpace(buf.buffer.charAt(buf.cursor)))
+            deleteCurrentCharacter();
+        //if we stand on a space or if the word ends in another space we remove it
+        if(isSpace(buf.buffer.charAt(buf.cursor)))
+            deleteCurrentCharacter();
+        return true;
+    }
     /**
      * Move the cursor <i>where</i> characters.
      *
@@ -1904,8 +1937,14 @@ public class ConsoleReader implements ConsoleOperations {
             killLine();
             this.buf.clearBuffer();
             this.buf.write(ua.getBuffer());
+            printCharacter(RESET_LINE);
+            flushConsole();
+            if (prompt != null) {
+                printString(prompt);
+            }
+            printString(buf.buffer.toString());
             setCursorPosition(ua.getCursorPosition()-prompt.length());
-            redrawLine();
+
             return true;
         }
         else

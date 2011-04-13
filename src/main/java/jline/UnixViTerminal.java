@@ -124,9 +124,17 @@ public class UnixViTerminal extends UnixTerminal {
                 latestAction = CTRL_W;
                 return CTRL_W;
             }
+            else if(c == VI_SHIFT_B) {
+                latestAction = CTRL_WW;
+                return CTRL_WW;
+            }
             else if(c == VI_W) {
                 latestAction = CTRL_M;
                 return CTRL_M;
+            }
+            else if(c == VI_SHIFT_W) {
+                latestAction = CTRL_MM;
+                return CTRL_MM;
             }
             else if(c == VI_D) {
                 latestAction = CTRL_SHIFT_K;
@@ -158,9 +166,17 @@ public class UnixViTerminal extends UnixTerminal {
                 switchEditMode();
                 return CTRL_W;
             }
-            if(c == VI_W) {
+            if(c == VI_SHIFT_B) {
+                switchEditMode();
+                return CTRL_WW;
+            }
+            else if(c == VI_W) {
                 switchEditMode();
                 return CTRL_M;
+            }
+            else if(c == VI_SHIFT_W) {
+                switchEditMode();
+                return CTRL_MM;
             }
             else if(c == VI_$) {
                 switchEditMode();
