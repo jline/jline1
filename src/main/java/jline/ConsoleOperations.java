@@ -41,6 +41,7 @@ public interface ConsoleOperations {
     final static char CTRL_SHIFT_G = 28; //prev space word
     final static char CTRL_OB = 29;
     final static char CTRL_Z = 30;
+    final static char CTRL_M = 31; // delete next word
     final static char DELETE = 127;
     final static char CTRL_QM = 127;
 
@@ -108,6 +109,11 @@ public interface ConsoleOperations {
      *  Operation that deletes the previous word in the buffer.
      */
     final short DELETE_PREV_WORD = -16;
+
+    /**
+     * Operation that deletes the next word in the buffer.
+     */
+    final short DELETE_NEXT_WORD = -17;
 
     /**
      *  Operation that moves to the next character in the buffer.

@@ -125,8 +125,8 @@ public class UnixViTerminal extends UnixTerminal {
                 return CTRL_W;
             }
             else if(c == VI_W) {
-                //latestAction = CTRL_W;
-                return DELETE; //TODO: fix this!
+                latestAction = CTRL_M;
+                return CTRL_M;
             }
             else if(c == VI_D) {
                 latestAction = CTRL_SHIFT_K;

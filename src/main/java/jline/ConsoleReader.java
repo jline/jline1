@@ -83,6 +83,7 @@ public class ConsoleReader implements ConsoleOperations {
         names.put("UNDO", new Short(UNDO));
         names.put("NEXT_WORD", new Short(NEXT_WORD));
         names.put("DELETE_NEXT_CHAR", new Short(DELETE_NEXT_CHAR));
+        names.put("DELETE_NEXT_WORD", new Short(DELETE_NEXT_WORD));
         names.put("CHANGE_CASE", new Short(CHANGE_CASE));
         names.put("COMPLETE", new Short(COMPLETE));
         names.put("EXIT", new Short(EXIT));
@@ -158,8 +159,8 @@ public class ConsoleReader implements ConsoleOperations {
     public ConsoleReader() throws IOException {
         this(new FileInputStream(FileDescriptor.in),
                 new PrintWriter(
-                new OutputStreamWriter(System.out,
-                System.getProperty("jline.WindowsTerminal.output.encoding", System.getProperty("file.encoding")))));
+                        new OutputStreamWriter(System.out,
+                                System.getProperty("jline.WindowsTerminal.output.encoding", System.getProperty("file.encoding")))));
     }
 
     /**
@@ -670,6 +671,11 @@ public class ConsoleReader implements ConsoleOperations {
                         case PASTE:
                             doAction();
                             success = paste();
+                            break;
+
+                        case DELETE_NEXT_WORD:
+                            doAction();
+                            success = deleteNextWord();
                             break;
 
                         case DELETE_PREV_WORD:
@@ -1541,6 +1547,12 @@ public class ConsoleReader implements ConsoleOperations {
             ;
         }
 
+        return true;
+    }
+
+    private final boolean deleteNextWord() throws IOException {
+        while(buf.cursor < buf.length() && !isDelimiter(buf.buffer.charAt(buf.cursor)))
+            deleteCurrentCharacter();
         return true;
     }
 
