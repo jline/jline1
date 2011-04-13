@@ -158,6 +158,10 @@ public class UnixViTerminal extends UnixTerminal {
                 switchEditMode();
                 return CTRL_W;
             }
+            if(c == VI_W) {
+                switchEditMode();
+                return CTRL_M;
+            }
             else if(c == VI_$) {
                 switchEditMode();
                 return CTRL_K;
