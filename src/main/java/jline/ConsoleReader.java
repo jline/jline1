@@ -121,7 +121,7 @@ public class ConsoleReader implements ConsoleOperations {
     /**
      * The Terminal to use.
      */
-    private final Terminal terminal;
+    private Terminal terminal;
     private CompletionHandler completionHandler = new CandidateListCompletionHandler();
     InputStream in;
     final Writer out;
@@ -633,7 +633,14 @@ public class ConsoleReader implements ConsoleOperations {
                             clearUndo();
                             moveToEnd();
                             printNewline(); // output newline
-                            return finishBuffer();
+                            String outBuffer = finishBuffer();
+                            if(!matchInternalCommand(outBuffer))
+                                return outBuffer;
+                            else {
+                                drawLine();
+                                break;
+                            }
+
 
                         case DELETE_PREV_CHAR: // backspace
                             doAction();
@@ -786,6 +793,28 @@ public class ConsoleReader implements ConsoleOperations {
         } finally {
             terminal.afterReadLine(this, this.prompt, mask);
         }
+    }
+
+    /**
+     * Check if out buffer match an internal command
+     * Internal commands:
+     * vi-mode - enables vi key bindings
+     * emacs-mode - enables emacs key bindings (default)
+     *
+     * @param outBuffer
+     * @return
+     */
+   private boolean matchInternalCommand(String outBuffer) {
+       if(outBuffer.equals("vi-mode")) {
+           terminal = new UnixViTerminal();
+           return true;
+       }
+       else if(outBuffer.equals("emacs-mode")) {
+           terminal = new UnixTerminal();
+           return true;
+       }
+       else
+           return false;
     }
 
     private String readLine(InputStream in) throws IOException {

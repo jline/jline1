@@ -67,7 +67,7 @@ public abstract class Terminal implements ConsoleOperations {
             }
         } else if (os.indexOf("windows") != -1) {
             t = new WindowsTerminal();
-        } else if(System.getProperty("jline.vimode") != null){
+        } else if(System.getProperty("jline.vi-mode") != null){
             t = new UnixViTerminal();
         } else {
             t = new UnixTerminal();
