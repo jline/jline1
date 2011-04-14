@@ -806,11 +806,11 @@ public class ConsoleReader implements ConsoleOperations {
      */
    private boolean matchInternalCommand(String outBuffer) {
        if(outBuffer.equals("vi-mode")) {
-           terminal = new UnixViTerminal();
+           terminal.enableViMode();
            return true;
        }
        else if(outBuffer.equals("emacs-mode")) {
-           terminal = new UnixTerminal();
+           terminal.disableViMode();
            return true;
        }
        else

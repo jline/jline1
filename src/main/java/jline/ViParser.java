@@ -4,12 +4,13 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * A simple Terminal that supports vi bindings.
+ * ViParser parses key presses if the terminal is in vi-mode
  *
  * @author Ståle W. Pedersen <stale.pedersen@jboss.org>
  */
-public class UnixViTerminal extends UnixTerminal {
+public class ViParser implements ConsoleOperations {
 
+    private static final short ESCAPE = 27;
     private static final short VI_S = 115;
     private static final short VI_SHIFT_S = 83;
     private static final short VI_D = 100;
@@ -45,42 +46,34 @@ public class UnixViTerminal extends UnixTerminal {
 
     private short latestAction = 0;
 
-    public int readVirtualKey(InputStream in) throws IOException {
-        int c = readCharacter(in);
+    private Terminal terminal;
 
-        if (isBackspaceDeleteSwitched())
-            if (c == DELETE)
-                c = '\b';
-            else if (c == '\b')
-                c = DELETE;
+    public ViParser(Terminal terminal) {
+        this.terminal = terminal;
+    }
 
-        if (c == ARROW_START) {
+    public int parseViInput(InputStream in) throws IOException {
+        int c = terminal.readCharacter(in);
+         if (c == ESCAPE) {
             switchEditMode();
-            return CTRL_B;
+             if(isInEditMode())
+                 return c;
+             else
+                return CTRL_B;
         }
 
         else if(!isInEditMode()) {
             c = enterCommandMode(c);
             while (c == 0) {
-                c = enterCommandMode(readCharacter(in));
+                c = enterCommandMode(terminal.readCharacter(in));
             }
             return c;
-        }
-
-        // handle unicode characters, thanks for a patch from amyi@inf.ed.ac.uk
-        if (c > 128) {
-            // handle unicode characters longer than 2 bytes,
-            // thanks to Marc.Herbert@continuent.com
-            replayStream.setInput(c, in);
-            //replayReader = new InputStreamReader(replayStream, encoding);
-            c = replayReader.read();
-
         }
 
         return c;
     }
 
-     private boolean isInEditMode() {
+    private boolean isInEditMode() {
         return editMode;
     }
 
@@ -209,7 +202,7 @@ public class UnixViTerminal extends UnixTerminal {
             return CTRL_P;
         else if(c == VI_B)
             return CTRL_X;
-        //  return CTRL_G;
+            //  return CTRL_G;
         else if(c == VI_SHIFT_B)
             return CTRL_SHIFT_G;
         else if(c == VI_W)
@@ -221,7 +214,7 @@ public class UnixViTerminal extends UnixTerminal {
         else if(c == VI_$)
             return CTRL_E;
 
-        //edit
+            //edit
         else if(c == VI_X) {
             latestAction = DELETE;
             return DELETE;

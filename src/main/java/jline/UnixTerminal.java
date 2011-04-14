@@ -123,13 +123,19 @@ public class UnixTerminal extends Terminal {
     
     
     public int readVirtualKey(InputStream in) throws IOException {
-        int c = readCharacter(in);
+        int c = 0;
+        if(viModeEnabled()) {
+            c = getViParser().parseViInput(in);
+        }
+        else
+            c = readCharacter(in);
 
-        if (isBackspaceDeleteSwitched())
+        if (isBackspaceDeleteSwitched() && !viModeEnabled())
             if (c == DELETE)
                 c = BACKSPACE;
             else if (c == BACKSPACE)
                 c = DELETE;
+
 
         // in Unix terminals, arrow keys are represented by
         // a sequence of 3 characters. E.g., the up arrow
@@ -162,7 +168,7 @@ public class UnixTerminal extends Terminal {
             } 
         } 
         // handle unicode characters, thanks for a patch from amyi@inf.ed.ac.uk
-        if (c > 128) {
+        if (c > 128 && c < VI_BINDING_START) {
           // handle unicode characters longer than 2 bytes,
           // thanks to Marc.Herbert@continuent.com
             replayStream.setInput(c, in);

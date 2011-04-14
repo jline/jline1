@@ -36,6 +36,10 @@ public interface ConsoleOperations {
     final static char CTRL_W = 23;
     final static char CTRL_X = 24; // prev word
     final static char CTRL_OB = 27;
+    final static char DELETE = 127;
+    final static char CTRL_QM = 127;
+
+    final static char VI_BINDING_START = 10000;
     final static char CTRL_O = 10025; // next word
     final static char CTRL_SHIFT_K = 10026; //clear the whole line
     final static char CTRL_SHIFT_O = 10027; //next space word
@@ -44,8 +48,6 @@ public interface ConsoleOperations {
     final static char CTRL_M = 10031; // delete next word
     final static char CTRL_MM = 10032; // delete next space word
     final static char CTRL_WW = 10033; // delete prev space word
-    final static char DELETE = 127;
-    final static char CTRL_QM = 127;
 
 
     /**
