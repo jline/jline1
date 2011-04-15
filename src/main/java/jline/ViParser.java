@@ -73,7 +73,7 @@ public class ViParser implements ConsoleOperations {
         return c;
     }
 
-    private boolean isInEditMode() {
+    public boolean isInEditMode() {
         return editMode;
     }
 
