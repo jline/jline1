@@ -90,8 +90,12 @@ public abstract class Terminal implements ConsoleOperations {
 
     void enableViMode() {
         vimode = true;
-        if(viParser == null)
-            viParser = new ViParser(term);
+        if(viParser == null) {
+            if(term != null)
+                viParser = new ViParser(term);
+            else
+                viParser = new ViParser(this);
+        }
     }
 
     void disableViMode() {

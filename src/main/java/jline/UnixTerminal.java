@@ -130,11 +130,17 @@ public class UnixTerminal extends Terminal {
         else
             c = readCharacter(in);
 
-        if (isBackspaceDeleteSwitched() && !viModeEnabled())
-            if (c == DELETE)
-                c = BACKSPACE;
-            else if (c == BACKSPACE)
-                c = DELETE;
+        if (isBackspaceDeleteSwitched()) {
+            if(viModeEnabled() && !getViParser().isInEditMode()) {
+                // if vi and we're in command mode, do nothing
+            }
+            else {
+                if (c == DELETE)
+                    c = BACKSPACE;
+                else if (c == BACKSPACE)
+                    c = DELETE;
+            }
+        }
 
 
         // in Unix terminals, arrow keys are represented by
