@@ -12,40 +12,67 @@ public class ViModeTest extends JLineTestCase {
     public void testSimpleMovementAndEdit() throws Exception {
         Buffer b = new Buffer("1234");
 
-        b.append(27) // press esc
-                .append(120) //press x
-                .append(10); //press enter
+        b.append(27) // esc
+                .append(120) // x
+                .append(10); // enter
 
         assertBufferViMode("123", b, true);
 
 
         b = new Buffer("1234");
-        b.append(27) // press esc
-         .append(104) // press h
-         .append(115) // press s
+        b.append(27) // esc
+         .append(104) // h
+         .append(115) // s
          .append("5")
-         .append(10); // press enter
+         .append(10); // enter
         assertBufferViMode("1254", b, true);
 
 
         b = new Buffer("1234");
-        b.append(27) // press esc
-                .append(48) //press 0
-                .append(120) //press x
-                .append(10); //press enter
+        b.append(27) // esc
+                .append(48) // 0
+                .append(120) // x
+                .append(10); // enter
 
         assertBufferViMode("234", b, true);
 
          b = new Buffer("1234");
-        b.append(27) // press esc
-                .append(48) //press 0
-                .append(120) //press x
-                .append(108)    // press l
-                .append(97)  // press a
+        b.append(27) // esc
+                .append(48) //0
+                .append(120) //x
+                .append(108)    // l
+                .append(97)  // a
                 .append("5") // insert 5
-                .append(10); //press enter
+                .append(10); //enter
 
         assertBufferViMode("2354", b, true);
+    }
+
+    public void testWordMovementAndEdit() throws Exception {
+        Buffer b = new Buffer("foo   bar...  Foo-Bar.");
+        b.append(27) // esc
+         .append(66) // shift-b
+         .append(100).append(119) // dw
+         .append(10);
+        assertBufferViMode("foo   bar...  -Bar.", b, true);
+
+        b = new Buffer("foo   bar...  Foo-Bar.");
+        b.append(27) // esc
+         .append(48) // 0
+         .append(87) // W
+         .append(87) // W
+         .append(100).append(87) // dW
+         .append(10); // enter
+        assertBufferViMode("foo   bar...  ", b, true);
+
+        b = new Buffer("foo   bar...   Foo-Bar.");
+        b.append(27) // esc
+         .append(48) // 0
+         .append(119) // w
+         .append(119) // w
+         .append(100).append(87) // dW
+         .append(10); // enter
+        assertBufferViMode("foo   barFoo-Bar.", b, true);
     }
 
 }

@@ -1624,17 +1624,6 @@ public class ConsoleReader implements ConsoleOperations {
             }
             return true;
         }
-        /*
-        while (isDelimiter(buf.current()) && backspace()) {
-            ;
-        }
-
-        while (!isDelimiter(buf.current()) && backspace()) {
-            ;
-        }
-
-        return true;
-        */
     }
 
     private final boolean deletePreviousSpaceWord() throws IOException {
@@ -1651,13 +1640,13 @@ public class ConsoleReader implements ConsoleOperations {
 
     private final boolean deleteNextWord() throws IOException {
          //if cursor stand on a delimiter, only move one char forward
-        if(buf.cursor < buf.length() && (isDelimiter(buf.buffer.charAt(buf.cursor)))) {
-            deleteCurrentCharacter();
-        }
-        else {
+        if(buf.cursor < buf.length() && (isDelimiter(buf.buffer.charAt(buf.cursor))))
+            while(buf.cursor < buf.length() && (isDelimiter(buf.buffer.charAt(buf.cursor))))
+                deleteCurrentCharacter();
+
+        else
             while(buf.cursor < buf.length() && !isDelimiter(buf.buffer.charAt(buf.cursor)))
                 deleteCurrentCharacter();
-        }
 
         //if we end up on a space we remove that too
         if(buf.cursor < buf.length() && isSpace(buf.buffer.charAt(buf.cursor)))
@@ -1670,7 +1659,7 @@ public class ConsoleReader implements ConsoleOperations {
         while(buf.cursor < buf.length() && !isSpace(buf.buffer.charAt(buf.cursor)))
             deleteCurrentCharacter();
         //if we stand on a space or if the word ends in another space we remove it
-        if(buf.cursor < buf.length() && isSpace(buf.buffer.charAt(buf.cursor)))
+        while(buf.cursor < buf.length() && isSpace(buf.buffer.charAt(buf.cursor)))
             deleteCurrentCharacter();
         return true;
     }
