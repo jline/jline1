@@ -20,12 +20,12 @@ public class TestEditLine extends JLineTestCase {
     public void testDeletePreviousWord() throws Exception {
         Buffer b = new Buffer("This is a test");
 
-        assertBuffer("This is a ", b = b.op(ConsoleReader.DELETE_PREV_WORD));
-        assertBuffer("This is ", b = b.op(ConsoleReader.DELETE_PREV_WORD));
-        assertBuffer("This ", b = b.op(ConsoleReader.DELETE_PREV_WORD));
-        assertBuffer("", b = b.op(ConsoleReader.DELETE_PREV_WORD));
-        assertBuffer("", b = b.op(ConsoleReader.DELETE_PREV_WORD));
-        assertBuffer("", b = b.op(ConsoleReader.DELETE_PREV_WORD));
+        assertBuffer("This is a t", b = b.op(ConsoleReader.DELETE_PREV_WORD));
+        assertBuffer("This is t", b = b.op(ConsoleReader.DELETE_PREV_WORD));
+        assertBuffer("This t", b = b.op(ConsoleReader.DELETE_PREV_WORD));
+        assertBuffer("t", b = b.op(ConsoleReader.DELETE_PREV_WORD));
+        assertBuffer("t", b = b.op(ConsoleReader.DELETE_PREV_WORD));
+        assertBuffer("t", b = b.op(ConsoleReader.DELETE_PREV_WORD));
     }
 
     public void testMoveToEnd() throws Exception {
