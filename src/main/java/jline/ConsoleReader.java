@@ -1614,7 +1614,7 @@ public class ConsoleReader implements ConsoleOperations {
         while(buf.cursor < buf.length() && !isSpace(buf.buffer.charAt(buf.cursor)))
             deleteCurrentCharacter();
         //if we stand on a space or if the word ends in another space we remove it
-        if(isSpace(buf.buffer.charAt(buf.cursor)))
+        if(buf.cursor < buf.length() && isSpace(buf.buffer.charAt(buf.cursor)))
             deleteCurrentCharacter();
         return true;
     }
