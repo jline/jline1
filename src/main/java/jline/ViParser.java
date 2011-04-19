@@ -10,7 +10,7 @@ import java.io.InputStream;
  */
 public class ViParser implements ConsoleOperations {
 
-    private static final short ESCAPE = 27;
+    public static final short ESCAPE = 27;
     private static final short VI_S = 115;
     private static final short VI_SHIFT_S = 83;
     private static final short VI_D = 100;
@@ -35,8 +35,9 @@ public class ViParser implements ConsoleOperations {
     private static final short VI_SHIFT_B = 66;
     private static final short VI_W = 119;
     private static final short VI_SHIFT_W = 87;
+    private static final short VI_SPACE = 32;
 
-    private static final short VI_ENTER = 10;
+    public static final short VI_ENTER = 10;
     private static final short VI_PERIOD = 46;
     private static final short VI_U = 117;
 
@@ -141,7 +142,7 @@ public class ViParser implements ConsoleOperations {
                 latestAction = CTRL_H;
                 return CTRL_H;
             }
-            else if(c == VI_L) {
+            else if(c == VI_L || c == VI_SPACE) {
                 latestAction =  DELETE;
                 return DELETE;
             }
@@ -179,7 +180,7 @@ public class ViParser implements ConsoleOperations {
                 switchEditMode();
                 return CTRL_H;
             }
-            else if(c == VI_L) {
+            else if(c == VI_L || c == VI_SPACE) {
                 switchEditMode();
                 return DELETE;
             }
@@ -194,7 +195,7 @@ public class ViParser implements ConsoleOperations {
         //movement
         if(c == VI_H)
             return CTRL_B;
-        else if(c == VI_L)
+        else if(c == VI_L || c == VI_SPACE)
             return CTRL_F;
         else if(c == VI_J)
             return CTRL_N;
