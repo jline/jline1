@@ -718,6 +718,10 @@ public class ConsoleReader implements ConsoleOperations {
                             success = nextSpaceWord();
                             break;
 
+                        case CHANGE_CASE:
+                            success = changeCase();
+                            break;
+
                         case START_OF_HISTORY:
                             success = history.moveToFirstEntry();
                             if (success) {
@@ -1958,6 +1962,25 @@ public class ConsoleReader implements ConsoleOperations {
      */
     private boolean isSpace(char c) {
         return Character.isWhitespace(c);
+    }
+
+    /**
+     * Switch case if the character is a letter
+     *
+     */
+    private boolean changeCase() throws IOException {
+        char c = buf.buffer.charAt(buf.cursor);
+        if(Character.isLetter(c)) {
+            if(Character.isLowerCase(c))
+                buf.buffer.setCharAt(buf.cursor, Character.toUpperCase(c));
+            else
+                buf.buffer.setCharAt(buf.cursor, Character.toLowerCase(c));
+
+            moveCursor(1);
+            redrawLine();
+        }
+
+        return true;
     }
 
     /**

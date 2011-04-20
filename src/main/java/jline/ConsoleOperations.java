@@ -48,6 +48,7 @@ public interface ConsoleOperations {
     final static char CTRL_M = 10031; // delete next word
     final static char CTRL_MM = 10032; // delete next space word
     final static char CTRL_WW = 10033; // delete prev space word
+    final static char TILDE = 10034; // change case
 
 
     /**

@@ -25,6 +25,7 @@ public class ViParser implements ConsoleOperations {
     private static final short VI_P = 112;
     private static final short VI_I = 105;
     private static final short VI_SHIFT_I = 73;
+    private static final short VI_TILDE = 126;
 
     //movement
     private static final short VI_H = 104;
@@ -270,6 +271,9 @@ public class ViParser implements ConsoleOperations {
         }
         else if(c == VI_U) {
             return CTRL_Z;
+        }
+        else if(c == VI_TILDE) {
+            return TILDE;
         }
 
         return 0;
