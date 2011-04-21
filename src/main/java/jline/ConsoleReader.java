@@ -84,6 +84,7 @@ public class ConsoleReader implements ConsoleOperations {
         names.put("NEXT_WORD", new Short(NEXT_WORD));
         names.put("DELETE_NEXT_CHAR", new Short(DELETE_NEXT_CHAR));
         names.put("DELETE_NEXT_WORD", new Short(DELETE_NEXT_WORD));
+        names.put("CHANGE_NEXT_WORD", new Short(CHANGE_NEXT_WORD));
         names.put("DELETE_NEXT_SPACE_WORD", new Short(DELETE_NEXT_SPACE_WORD));
         names.put("DELETE_PREV_SPACE_WORD", new Short(DELETE_PREV_SPACE_WORD));
         names.put("CHANGE_CASE", new Short(CHANGE_CASE));
@@ -684,7 +685,12 @@ public class ConsoleReader implements ConsoleOperations {
 
                         case DELETE_NEXT_WORD:
                             doAction();
-                            success = deleteNextWord();
+                            success = deleteNextWord(true);
+                            break;
+
+                        case CHANGE_NEXT_WORD:
+                            doAction();
+                            success = deleteNextWord(false);
                             break;
 
                         case DELETE_PREV_WORD:
@@ -719,6 +725,7 @@ public class ConsoleReader implements ConsoleOperations {
                             break;
 
                         case CHANGE_CASE:
+                            doAction();
                             success = changeCase();
                             break;
 
@@ -1642,7 +1649,7 @@ public class ConsoleReader implements ConsoleOperations {
         return true;
     }
 
-    private final boolean deleteNextWord() throws IOException {
+    private final boolean deleteNextWord(boolean removeTrailingSpaces) throws IOException {
          //if cursor stand on a delimiter, only move one char forward
         if(buf.cursor < buf.length() && (isDelimiter(buf.buffer.charAt(buf.cursor))))
             while(buf.cursor < buf.length() && (isDelimiter(buf.buffer.charAt(buf.cursor))))
@@ -1653,8 +1660,9 @@ public class ConsoleReader implements ConsoleOperations {
                 deleteCurrentCharacter();
 
         //if we end up on a space we remove that too
-        if(buf.cursor < buf.length() && isSpace(buf.buffer.charAt(buf.cursor)))
-            deleteCurrentCharacter();
+        if(removeTrailingSpaces)
+            if(buf.cursor < buf.length() && isSpace(buf.buffer.charAt(buf.cursor)))
+                deleteCurrentCharacter();
 
         return true;
     }

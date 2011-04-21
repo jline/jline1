@@ -131,6 +131,8 @@ public class UnixTerminal extends Terminal {
             c = readCharacter(in);
 
         if (isBackspaceDeleteSwitched()) {
+            //TODO: this is just a temp fix since it will still fail for
+            // c-l, c-space
             if(viModeEnabled() && !getViParser().isInEditMode()) {
                 // if vi and we're in command mode, do nothing
             }

@@ -124,4 +124,21 @@ public class ViModeTest extends JLineTestCase {
         assertBufferViMode("/cd /home/foo; ls; cd ", b, true);
     }
 
+    public void testTildeAndEdit() throws IOException {
+        Buffer b = new Buffer("apt-get install vIM");
+        b.append(ViParser.ESCAPE)
+         .append("b")
+         .append("~").append("~").append("~")
+         .append("0")
+         .append("w").append("w")
+         .append("c").append("w")
+         .append("cache")
+         .append(ViParser.ESCAPE)
+         .append("w")
+         .append("c").append("w")
+         .append("search")
+         .append(ViParser.VI_ENTER);
+        assertBufferViMode("apt-cache search Vim", b, true);
+    }
+
 }

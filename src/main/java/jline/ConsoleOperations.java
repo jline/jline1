@@ -49,6 +49,7 @@ public interface ConsoleOperations {
     final static char CTRL_MM = 10032; // delete next space word
     final static char CTRL_WW = 10033; // delete prev space word
     final static char TILDE = 10034; // change case
+    final static char CTRL_CW = 10035; // change word
 
 
     /**
@@ -119,6 +120,11 @@ public interface ConsoleOperations {
      * Operation that deletes the next word in the buffer.
      */
     final short DELETE_NEXT_WORD = -17;
+
+    /**
+     * Operation that changes the next word in the buffer.
+     */
+    final short CHANGE_NEXT_WORD = -18;
 
     /**
      *  Operation that moves to the next character in the buffer.

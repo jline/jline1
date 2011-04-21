@@ -167,7 +167,7 @@ public class ViParser implements ConsoleOperations {
             }
             else if(c == VI_W) {
                 switchEditMode();
-                return CTRL_M;
+                return CTRL_CW;
             }
             else if(c == VI_SHIFT_W) {
                 switchEditMode();
@@ -273,6 +273,7 @@ public class ViParser implements ConsoleOperations {
             return CTRL_Z;
         }
         else if(c == VI_TILDE) {
+            latestAction = TILDE;
             return TILDE;
         }
 
