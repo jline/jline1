@@ -6,6 +6,8 @@
  */
 package jline;
 
+import jline.console.*;
+
 import java.awt.*;
 import java.awt.datatransfer.*;
 import java.awt.event.ActionListener;
@@ -612,12 +614,11 @@ public class ConsoleReader implements ConsoleOperations {
                             break;
 
                         case MOVE_TO_BEG:
-                            success = setCursorPosition(0);
+                            success = performAction(new SimpleAction(buf.cursor, Action.MOVE, 0));
                             break;
 
                         case KILL_LINE: // CTRL-K
-                            doAction();
-                            success = killLine();
+                            success = performAction(new SimpleAction(buf.cursor, Action.DELETE, buf.length()));
                             break;
 
                         case CLEAR_SCREEN: // CTRL-L
@@ -626,8 +627,7 @@ public class ConsoleReader implements ConsoleOperations {
                             break;
 
                         case KILL_LINE_PREV: // CTRL-U
-                            doAction();
-                            success = resetLine();
+                            success = performAction(new SimpleAction(buf.cursor, Action.DELETE, 0));
                             break;
 
                         case NEWLINE: // enter
@@ -644,25 +644,23 @@ public class ConsoleReader implements ConsoleOperations {
 
 
                         case DELETE_PREV_CHAR: // backspace
-                            doAction();
-                            success = backspace();
+                            success = performAction(new DeleteAction(buf.cursor, Action.DELETE, true));
                             break;
 
                         case DELETE_NEXT_CHAR: // delete
-                            doAction();
-                            success = deleteCurrentCharacter();
+                            success = performAction(new DeleteAction(buf.cursor, Action.DELETE));
                             break;
 
                         case MOVE_TO_END:
-                            success = moveToEnd();
+                            success = performAction(new SimpleAction(buf.cursor, Action.MOVE, buf.length()));
                             break;
 
                         case PREV_CHAR:
-                            success = moveCursor(-1) != 0;
+                            success = performAction(new SimpleAction(buf.cursor, Action.MOVE, buf.cursor-1));
                             break;
 
                         case NEXT_CHAR:
-                            success = moveCursor(1) != 0;
+                            success = performAction(new SimpleAction(buf.cursor, Action.MOVE, buf.cursor+1));
                             break;
 
                         case NEXT_HISTORY:
@@ -684,44 +682,39 @@ public class ConsoleReader implements ConsoleOperations {
                             break;
 
                         case DELETE_NEXT_WORD:
-                            doAction();
-                            success = deleteNextWord(true);
+                            success = performAction(new NextWordAction(buf.cursor, Action.DELETE));
                             break;
 
                         case CHANGE_NEXT_WORD:
-                            doAction();
-                            success = deleteNextWord(false);
+                            success = performAction(new NextWordAction(buf.cursor, Action.DELETE, false));
                             break;
 
                         case DELETE_PREV_WORD:
-                            doAction();
-                            success = deletePreviousWord();
+                            success = performAction(new PrevWordAction(buf.cursor, Action.DELETE));
                             break;
 
                         case DELETE_NEXT_SPACE_WORD:
-                            doAction();
-                            success = deleteNextSpaceWord();
+                            success = performAction(new NextSpaceWordAction(buf.cursor, Action.DELETE));
                             break;
 
                         case DELETE_PREV_SPACE_WORD:
-                            doAction();
-                            success = deletePreviousSpaceWord();
+                            success = performAction(new PrevSpaceWordAction(buf.cursor, Action.DELETE));
                             break;
 
                         case PREV_WORD:
-                            success = previousWord();
+                            success = performAction(new PrevWordAction(buf.cursor, Action.MOVE));
                             break;
 
                         case PREV_SPACE_WORD:
-                            success = previousSpaceWord();
+                            success = performAction(new PrevSpaceWordAction(buf.cursor, Action.MOVE));
                             break;
 
                         case NEXT_WORD:
-                            success = nextWord();
+                            success = performAction(new NextWordAction(buf.cursor, Action.MOVE));
                             break;
 
                         case NEXT_SPACE_WORD:
-                            success = nextSpaceWord();
+                            success = performAction(new NextSpaceWordAction(buf.cursor, Action.MOVE));
                             break;
 
                         case CHANGE_CASE:
@@ -744,13 +737,11 @@ public class ConsoleReader implements ConsoleOperations {
                             break;
 
                         case CLEAR_LINE:
-                            setCursorPosition(0);
-                            success = killLine();
+                            success = performAction(new SimpleAction(0, Action.DELETE, buf.length()));
                             break;
 
                         case UNDO:
                             success = undo();
-                            //drawLine();
                             break;
 
                         case INSERT:
@@ -784,7 +775,6 @@ public class ConsoleReader implements ConsoleOperations {
                                     action.actionPerformed(null);
                                 } else {
                                     if(!undoBuffer.isEmpty()) {
-                                        //System.out.println("Size of undoBuffer: "+undoBuffer.size());
                                         doAction();
                                     }
                                     putChar(c, true);
@@ -1544,137 +1534,41 @@ public class ConsoleReader implements ConsoleOperations {
         return true;
     }
 
-    private final boolean previousWord() throws IOException {
-        //the cursor position in jline might be > the buffer
-        if(buf.cursor >= buf.buffer.length())
-            buf.cursor = buf.buffer.length()-1;
 
-        //move back every space
-        while(buf.cursor > 0 && isSpace(buf.buffer.charAt(buf.cursor-1)))
-            moveCursor(-1);
-
-        if(buf.cursor > 0 && isDelimiter(buf.buffer.charAt(buf.cursor-1))) {
-            while(buf.cursor > 0 && isDelimiter(buf.buffer.charAt(buf.cursor-1)))
-                moveCursor(-1);
+    /**
+     * Perform the designated action created by an event
+     *
+     * @param action
+     * @return true if nothing goes wrong
+     * @throws IOException
+     */
+    private final boolean performAction(ConsoleAction action) throws IOException {
+        action.doAction(buf.getBuffer());
+        if(action.getAction() == Action.MOVE) {
+            moveInternal((action.getEnd()-action.getStart()));
             return true;
         }
-        else {
-
-            while(buf.cursor > 0 && !isDelimiter(buf.buffer.charAt(buf.cursor-1))) {
-                moveCursor(-1);
+        else if(action.getAction() == Action.DELETE) {
+            //first trigger undo action
+            doAction();
+            if(action.getEnd() > action.getStart()) {
+                // only if start != cursor we need to move it
+                if(action.getStart() != buf.cursor) {
+                    moveInternal(action.getStart()-buf.cursor);
+                }
+                buf.buffer.delete(action.getStart(), action.getEnd());
+                drawBuffer(buf.cursor);
             }
-            return true;
-        }
-    }
-
-    private final boolean previousSpaceWord() throws IOException {
-        while (isSpace(buf.current()) && (moveCursor(-1) != 0)) {
-            ;
-        }
-
-        while (!isSpace(buf.current()) && (moveCursor(-1) != 0)) {
-            ;
-        }
-
-        return true;
-    }
-    private final boolean nextWord() throws IOException {
-        //if cursor stand on a delimiter, move till its no more delimiters
-        if(buf.cursor < buf.length() && (isDelimiter(buf.buffer.charAt(buf.cursor))))
-            while(buf.cursor < buf.length() && (isDelimiter(buf.buffer.charAt(buf.cursor))))
-                moveCursor(1);
-        //if we stand on a non-delimiter
-        else {
-            while(buf.cursor < buf.length() && !isDelimiter(buf.buffer.charAt(buf.cursor)))
-                moveCursor(1);
-
-            //if we end up on a space we move past that too
-            if(buf.cursor < buf.length() && isSpace(buf.buffer.charAt(buf.cursor)))
-                while(buf.cursor < buf.length() && isSpace(buf.buffer.charAt(buf.cursor)))
-                    moveCursor(1);
-        }
-        return true;
-    }
-
-    private final boolean nextSpaceWord() throws IOException {
-        //if cursor stand on a delimiter, move till its no more delimiters
-        if(buf.cursor < buf.length() && (isDelimiter(buf.buffer.charAt(buf.cursor))))
-            while(buf.cursor < buf.length() && (isDelimiter(buf.buffer.charAt(buf.cursor))))
-                moveCursor(1);
-        //if we stand on a non-delimiter
-        else {
-            while(buf.cursor < buf.length() && !isSpace(buf.buffer.charAt(buf.cursor)))
-                moveCursor(1);
-
-            //if we end up on a space we move past that too
-            if(buf.cursor < buf.length() && isSpace(buf.buffer.charAt(buf.cursor)))
-                while(buf.cursor < buf.length() && isSpace(buf.buffer.charAt(buf.cursor)))
-                    moveCursor(1);
-        }
-        return true;
-    }
-
-    private final boolean deletePreviousWord() throws IOException {
-        //the cursor position in jline might be > the buffer
-        if(buf.cursor >= buf.buffer.length())
-            buf.cursor = buf.buffer.length()-1;
-
-        //move back every space
-        while(buf.cursor > 0 && isSpace(buf.buffer.charAt(buf.cursor-1)))
-            backspace();
-
-        if(buf.cursor > 0 && isDelimiter(buf.buffer.charAt(buf.cursor-1))) {
-            while(buf.cursor > 0 && isDelimiter(buf.buffer.charAt(buf.cursor-1)))
-                backspace();
-            return true;
-        }
-        else {
-
-            while(buf.cursor > 0 && !isDelimiter(buf.buffer.charAt(buf.cursor-1))) {
-                backspace();
+            else {
+                buf.buffer.delete(action.getEnd(), action.getStart());
+                moveInternal((action.getEnd()-action.getStart()));
+                drawBuffer(buf.cursor);
             }
-            return true;
-        }
-    }
-
-    private final boolean deletePreviousSpaceWord() throws IOException {
-        while (isSpace(buf.current()) && backspace()) {
-            ;
-        }
-
-        while (!isSpace(buf.current()) && backspace()) {
-            ;
         }
 
         return true;
     }
 
-    private final boolean deleteNextWord(boolean removeTrailingSpaces) throws IOException {
-         //if cursor stand on a delimiter, only move one char forward
-        if(buf.cursor < buf.length() && (isDelimiter(buf.buffer.charAt(buf.cursor))))
-            while(buf.cursor < buf.length() && (isDelimiter(buf.buffer.charAt(buf.cursor))))
-                deleteCurrentCharacter();
-
-        else
-            while(buf.cursor < buf.length() && !isDelimiter(buf.buffer.charAt(buf.cursor)))
-                deleteCurrentCharacter();
-
-        //if we end up on a space we remove that too
-        if(removeTrailingSpaces)
-            if(buf.cursor < buf.length() && isSpace(buf.buffer.charAt(buf.cursor)))
-                deleteCurrentCharacter();
-
-        return true;
-    }
-
-    private final boolean deleteNextSpaceWord() throws IOException {
-        while(buf.cursor < buf.length() && !isSpace(buf.buffer.charAt(buf.cursor)))
-            deleteCurrentCharacter();
-        //if we stand on a space or if the word ends in another space we remove it
-        while(buf.cursor < buf.length() && isSpace(buf.buffer.charAt(buf.cursor)))
-            deleteCurrentCharacter();
-        return true;
-    }
     /**
      * Move the cursor <i>where</i> characters.
      *
@@ -1812,46 +1706,6 @@ public class ConsoleReader implements ConsoleOperations {
         return c;
     }
 
-    /**
-     *  Issue <em>num</em> deletes.
-     *
-     *  @return  the number of characters backed up
-     */
-    private final int delete(final int num)
-            throws IOException {
-        /* Commented out beacuse of DWA-2949:
-        if (buf.cursor == 0)
-        return 0;*/
-
-        buf.buffer.delete(buf.cursor, buf.cursor + 1);
-        drawBuffer(1);
-
-        return 1;
-    }
-
-    public final boolean replace(int num, String replacement) {
-        buf.buffer.replace(buf.cursor - num, buf.cursor, replacement);
-        try {
-            moveCursor(-num);
-            drawBuffer(Math.max(0, num - replacement.length()));
-            moveCursor(replacement.length());
-        } catch (IOException e) {
-            e.printStackTrace();
-            return false;
-        }
-        return true;
-    }
-
-    /**
-     *  Issue a delete.
-     *
-     *  @return  true if successful
-     */
-    public final boolean delete()
-            throws IOException {
-        return delete(1) == 1;
-    }
-
     public void setHistory(final History history) {
         this.history = history;
     }
@@ -1915,61 +1769,12 @@ public class ConsoleReader implements ConsoleOperations {
     private void consumeException(final Throwable e) {
     }
 
-    /**
-     * Checks to see if the specified character is a delimiter. We consider a
-     * character a delimiter if it is anything but a letter or digit.
-     *
-     * @param c
-     *            the character to test
-     * @return true if it is a delimiter
-     */
-    private boolean isDelimiter(char c) {
-        return !Character.isLetterOrDigit(c);
-    }
 
     private void printANSISequence(String sequence) throws IOException {
         printCharacter(27);
         printCharacter('[');
         printString(sequence);
         flushConsole();
-    }
-
-    /*
-    private int currentCol, currentRow;
-
-    private void getCurrentPosition() {
-        // check for ByteArrayInputStream to disable for unit tests
-        if (terminal.isANSISupported() && !(in instanceof ByteArrayInputStream)) {
-            try {
-                printANSISequence("[6n");
-                flushConsole();
-                StringBuffer b = new StringBuffer(8);
-                // position is sent as <ESC>[{ROW};{COLUMN}R
-                int r;
-                while((r = in.read()) > -1 && r != 'R') {
-                    if (r != 27 && r != '[') {
-                        b.append((char) r);
-                    }
-                }
-                String[] pos = b.toString().split(";");
-                currentRow = Integer.parseInt(pos[0]);
-                currentCol = Integer.parseInt(pos[1]);
-            } catch (Exception x) {
-                // no luck
-                currentRow = currentCol = -1;
-            }
-        }
-    }
-    */
-
-    /**
-     * Checks to see if the specified character is a space.
-     *
-     * @param c
-     * @return
-     */
-    private boolean isSpace(char c) {
-        return Character.isWhitespace(c);
     }
 
     /**
