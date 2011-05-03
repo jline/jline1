@@ -5,6 +5,7 @@ import java.io.InputStream;
 
 /**
  * ViParser parses key presses if the terminal is in vi-mode
+ * NOTE: Arrow keys will atm not work in vi-mode, use vi keys for movement instead
  *
  * @author Ståle W. Pedersen <stale.pedersen@jboss.org>
  */
@@ -23,9 +24,12 @@ public class ViParser implements ConsoleOperations {
     private static final short VI_$ = 36;
     private static final short VI_X = 120;
     private static final short VI_P = 112;
+    private static final short VI_SHIFT_P = 80;
     private static final short VI_I = 105;
     private static final short VI_SHIFT_I = 73;
     private static final short VI_TILDE = 126;
+    private static final short VI_Y = 121;
+
 
     //movement
     private static final short VI_H = 104;
@@ -42,16 +46,16 @@ public class ViParser implements ConsoleOperations {
     private static final short VI_PERIOD = 46;
     private static final short VI_U = 117;
 
-    private boolean deleteMode = false;
-    private boolean editMode = true;
-    private boolean changeMode = false;
-
-    private short latestAction = 0;
-
     private Terminal terminal;
+    private ViMode viMode;
+    private ViMode previousMode;
+
+    private int previousAction;
 
     public ViParser(Terminal terminal) {
         this.terminal = terminal;
+        viMode = new ViMode();
+        previousMode = new ViMode();
     }
 
     public int parseViInput(InputStream in) throws IOException {
@@ -76,207 +80,204 @@ public class ViParser implements ConsoleOperations {
     }
 
     public boolean isInEditMode() {
-        return editMode;
+        return viMode.isInEditMode();
     }
 
-    private void switchEditMode() {
-        if(editMode)
-            editMode = false;
-        else {
-            editMode = true;
-            setChangeMode(false);
-            setDeleteMode(false);
+    public void switchEditMode() {
+        viMode.switchEditMode();
+    }
+
+    public void setDeleteMode(boolean deleteMode) {
+        viMode.setDeleteMode(deleteMode);
+    }
+
+    public boolean isDeleteMode() {
+        return viMode.isDeleteMode();
+    }
+
+    public boolean isChangeMode() {
+        return viMode.isChangeMode();
+    }
+
+    public boolean isYankMode() {
+        return viMode.isYankMode();
+    }
+
+    public void setYankMode(boolean yankMode) {
+        viMode.setYankMode(yankMode);
+    }
+
+    private int saveAction(int action) {
+        if(isYankMode() || isChangeMode() || isDeleteMode()) {
+            previousAction = action;
+            previousMode.replicate(viMode);
         }
-    }
-
-    private void setDeleteMode(boolean deleteMode) {
-        this.deleteMode = deleteMode;
-    }
-
-    private boolean isDeleteMode() {
-        return deleteMode;
-    }
-
-    private void setChangeMode(boolean b) {
-        changeMode = b;
-    }
-
-    private boolean isChangeMode() {
-        return changeMode;
+        return action;
     }
 
     private int enterCommandMode(int c) throws IOException {
-        //int c = readCharacter(in);
-        //System.out.println("in commandmode, got:"+((char) c)+"which is:"+c);
 
         // an extra check because of "i"
         if(isInEditMode())
             return c;
 
-        if(isDeleteMode()) {
-            setDeleteMode(false);
-            if(c == VI_B) {
-                latestAction = CTRL_W;
-                return CTRL_W;
-            }
-            else if(c == VI_SHIFT_B) {
-                latestAction = CTRL_WW;
-                return CTRL_WW;
-            }
-            else if(c == VI_W) {
-                latestAction = CTRL_M;
-                return CTRL_M;
-            }
-            else if(c == VI_SHIFT_W) {
-                latestAction = CTRL_MM;
-                return CTRL_MM;
-            }
-            else if(c == VI_D) {
-                latestAction = CTRL_SHIFT_K;
-                return CTRL_SHIFT_K;
-            }
-            else if(c == VI_$) {
-                latestAction = CTRL_K;
-                return CTRL_K;
-            }
-            else if(c == VI_H) {
-                latestAction = CTRL_H;
-                return CTRL_H;
-            }
-            else if(c == VI_L || c == VI_SPACE) {
-                latestAction =  DELETE;
-                return DELETE;
-            }
-            else if(c == VI_0) {
-                latestAction = CTRL_U;
-                return CTRL_U;
-            }
-
-            return 0;
-        }
-
-        if(isChangeMode()) {
-            setChangeMode(false);
-            if(c == VI_B) {
-                switchEditMode();
-                return CTRL_W;
-            }
-            if(c == VI_SHIFT_B) {
-                switchEditMode();
-                return CTRL_WW;
-            }
-            else if(c == VI_W) {
-                switchEditMode();
-                return CTRL_CW;
-            }
-            else if(c == VI_SHIFT_W) {
-                switchEditMode();
-                return CTRL_MM;
-            }
-            else if(c == VI_$) {
-                switchEditMode();
-                return CTRL_K;
-            }
-            else if(c == VI_H) {
-                switchEditMode();
-                return CTRL_H;
-            }
-            else if(c == VI_L || c == VI_SPACE) {
-                switchEditMode();
-                return DELETE;
-            }
-            else if(c == VI_0) {
-                switchEditMode();
-                return CTRL_U;
-            }
-
-            return 0;
-        }
-
         //movement
         if(c == VI_H)
-            return CTRL_B;
+            return saveAction(CTRL_B);
         else if(c == VI_L || c == VI_SPACE)
-            return CTRL_F;
+            return saveAction(CTRL_F);
         else if(c == VI_J)
-            return CTRL_N;
+            return saveAction(CTRL_N);
         else if(c == VI_K)
-            return CTRL_P;
+            return saveAction(CTRL_P);
         else if(c == VI_B)
-            return CTRL_X;
-            //  return CTRL_G;
+            return saveAction(CTRL_X);
         else if(c == VI_SHIFT_B)
-            return CTRL_SHIFT_G;
+            return saveAction(CTRL_SHIFT_G);
         else if(c == VI_W)
-            return CTRL_O;
+            return saveAction(CTRL_O);
         else if(c == VI_SHIFT_W)
-            return CTRL_SHIFT_O;
+            return saveAction(CTRL_SHIFT_O);
         else if(c == VI_0)
-            return CTRL_A;
+            return saveAction(CTRL_A);
         else if(c == VI_$)
-            return CTRL_E;
+            return saveAction(CTRL_E);
 
-            //edit
+        //edit
         else if(c == VI_X) {
-            latestAction = DELETE;
-            return DELETE;
+            return saveAction(DELETE);
         }
-        //else if(c == VI_P) //TODO
-        //   return ConsoleOperations.PASTE;
+        // paste
+        else if(c == VI_P)
+           return saveAction(VI_PASTE_AFTER);
+        else if(c == VI_SHIFT_P)
+            return saveAction(VI_PASTE_BEFORE);
+        // replace
         else if(c == VI_S) {
             switchEditMode();
-            return DELETE;
+            return saveAction(DELETE);
         }
         else if(c == VI_SHIFT_S) {
-            switchEditMode();
-            return CTRL_SHIFT_K;
+            viMode.setChangeMode(true);
+            return saveAction(CTRL_SHIFT_K);
         }
+        // insert
         else if(c == VI_A) {
             switchEditMode();
-            return CTRL_F;
+            return saveAction(CTRL_F);
         }
         else if(c == VI_SHIFT_A) {
             switchEditMode();
-            return CTRL_E;
+            return saveAction(CTRL_E);
         }
         else if(c == VI_I) {
             switchEditMode();
-            return 0;
+            return saveAction(0);
         }
         else if(c == VI_SHIFT_I) {
             switchEditMode();
-            return CTRL_A;
+            return saveAction(CTRL_A);
         }
+        //delete
         else if(c == VI_D) {
-            setDeleteMode(true);
-            return 0;
+            //if we're already in delete-mode, delete the whole line
+            if(isDeleteMode())
+                return saveAction(CTRL_SHIFT_K);
+            else
+                viMode.setDeleteMode(true);
         }
         else if(c == VI_SHIFT_D) {
-            latestAction = CTRL_K;
-            return CTRL_K;
+            viMode.setDeleteMode(true);
+            return saveAction(CTRL_E);
         }
         else if(c == VI_C) {
-            setChangeMode(true);
+            viMode.setChangeMode(true);
         }
         else if(c == VI_SHIFT_C) {
-            switchEditMode();
-            return CTRL_K;
+            viMode.setChangeMode(true);
+            return saveAction(CTRL_E);
         }
         else if(c == VI_ENTER) {
             switchEditMode();
             return c;
         }
         else if(c == VI_PERIOD) {
-            return latestAction;
+            viMode.replicate(previousMode);
+            return previousAction;
         }
         else if(c == VI_U) {
-            return CTRL_Z;
+            return saveAction(CTRL_Z);
         }
         else if(c == VI_TILDE) {
-            latestAction = TILDE;
-            return TILDE;
+            return saveAction(TILDE);
+        }
+        else if(c == VI_Y) {
+            //if we're already in yank-mode, yank the whole line
+            if(isYankMode())
+                return saveAction(CTRL_SHIFT_K);
+            else
+                viMode.setYankMode(true);
         }
 
         return 0;
     }
+
+    /**
+     * Simple class to control which mode we're in.
+     * Separated into a class since its needed by previousAction too.
+     */
+    private class ViMode {
+        private boolean deleteMode = false;
+        private boolean editMode = true;
+        private boolean changeMode = false;
+        private boolean yankMode = false;
+
+        private boolean isInEditMode() {
+            return editMode;
+        }
+
+        private void switchEditMode() {
+            if(editMode)
+                editMode = false;
+            else {
+                editMode = true;
+                setChangeMode(false);
+                setDeleteMode(false);
+                setYankMode(false);
+            }
+        }
+
+        private void setDeleteMode(boolean deleteMode) {
+            this.deleteMode = deleteMode;
+        }
+
+        private boolean isDeleteMode() {
+            return deleteMode;
+        }
+
+        private void setChangeMode(boolean b) {
+            changeMode = b;
+        }
+
+        private boolean isChangeMode() {
+            return changeMode;
+        }
+
+        private void setYankMode(boolean yankMode) {
+            this.yankMode = yankMode;
+        }
+
+        private boolean isYankMode() {
+            return yankMode;
+        }
+
+        private void replicate(ViMode mode) {
+            deleteMode = mode.deleteMode;
+            editMode = mode.editMode;
+            changeMode = mode.changeMode;
+            yankMode = mode.yankMode;
+        }
+
+    }
+
 }

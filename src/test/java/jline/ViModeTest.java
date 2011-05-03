@@ -141,4 +141,20 @@ public class ViModeTest extends JLineTestCase {
         assertBufferViMode("apt-cache search Vim", b, true);
     }
 
+    public void testPasteAndEdit() throws IOException {
+        Buffer b = new Buffer("apt-get install vIM");
+        b.append(ViParser.ESCAPE)
+         .append("0")
+         .append("dW")
+         .append("w")
+         .append("P") //yank before
+         .append("W")
+         .append("yw") // add word to buffer
+         .append("$")
+         .append("p")
+         .append(ViParser.VI_ENTER);
+        assertBufferViMode("install apt-get vIMvIM", b, true);
+
+    }
+
 }

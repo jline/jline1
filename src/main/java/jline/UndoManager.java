@@ -5,14 +5,14 @@ import java.util.Stack;
 /**
  * @author Ståle W. Pedersen <stale.pedersen@jboss.org>
  */
-public class Undo {
+public class UndoManager {
 
     private static short UNDO_SIZE = 50;
 
     private Stack undoStack;
     private int counter;
 
-    public Undo() {
+    public UndoManager() {
         undoStack = new Stack();
         undoStack.setSize(UNDO_SIZE);
         counter = 0;

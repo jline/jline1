@@ -45,11 +45,9 @@ public interface ConsoleOperations {
     final static char CTRL_SHIFT_O = 10027; //next space word
     final static char CTRL_SHIFT_G = 10028; //prev space word
     final static char CTRL_Z = 10030;
-    final static char CTRL_M = 10031; // delete next word
-    final static char CTRL_MM = 10032; // delete next space word
-    final static char CTRL_WW = 10033; // delete prev space word
-    final static char TILDE = 10034; // change case
-    final static char CTRL_CW = 10035; // change word
+    final static char TILDE = 10031; // change case
+    final static char VI_PASTE_AFTER = 10032; // paste after
+    final static char VI_PASTE_BEFORE = 10033; // paste before
 
 
     /**
@@ -160,16 +158,6 @@ public interface ConsoleOperations {
      *  Operation that moved to the end of the current word.
      */
     final short TO_END_WORD = -29;
-
-    /**
-     * Operation that deletes the next word in the buffer delimited by space.
-     */
-    final short DELETE_PREV_SPACE_WORD = -30;
-
-    /**
-     * Operation that deletes the next word in the buffer delimited by space.
-     */
-    final short DELETE_NEXT_SPACE_WORD = -32;
 
     /**
      *  Operation that
@@ -315,5 +303,15 @@ public interface ConsoleOperations {
      * Operation that aborts the current command (like searching)
      */
     final static short ABORT = -64;
+
+    /**
+     * Operation that paste the latest action after cursor
+     */
+    final static short PASTE_AFTER = -65;
+
+    /**
+     * Operation that paste the latest action before cursor
+     */
+    final static short PASTE_BEFORE = -66;
 
 }

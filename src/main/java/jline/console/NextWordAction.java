@@ -11,11 +11,8 @@ public class NextWordAction extends ConsoleAction{
 
     public NextWordAction(int start, int action) {
         super(start, action);
-    }
-
-    public NextWordAction(int start, int action, boolean removeTrailingSpaces) {
-        super(start, action);
-        this.removeTrailingSpaces = removeTrailingSpaces;
+        if(getAction() == Action.CHANGE)
+            removeTrailingSpaces = false;
     }
 
     public void doAction(StringBuffer buffer) {
