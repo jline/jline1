@@ -535,15 +535,6 @@ public class ConsoleReader implements ConsoleOperations {
                     return null;
                 }
 
-                // if we go from adding chars to another action we must end the current input mode
-                /*
-                if(code != UNKNOWN) {
-                    if(pasteManager.isInputMode())
-                        pasteManager.completePaste();
-                }
-                */
-
-
                 // Search mode.
                 //
                 // Note that we have to do this first, because if there is a command
