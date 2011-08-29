@@ -504,8 +504,6 @@ public class ConsoleReader implements ConsoleOperations {
             final int SEARCH = 2;
             int state = NORMAL;
 
-            boolean success = true;
-
             while (true) {
                 // Read next key and look up the command binding.
                 int[] next = readBinding();
@@ -520,6 +518,8 @@ public class ConsoleReader implements ConsoleOperations {
                 if (c == -1) {
                     return null;
                 }
+                
+                boolean success = true;
 
                 // Search mode.
                 //
