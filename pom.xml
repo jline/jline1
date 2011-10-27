@@ -89,8 +89,8 @@ To make a bundle and request that ibilio upload it, do:
     </license>
   </licenses>
   <scm>
-    <connection>git://github.com/jline/jline.git</connection>
-    <developerConnection>git@github.com:jline/jline.git</developerConnection>
+    <connection>scm:git:git://github.com/jline/jline.git</connection>
+    <developerConnection>scm:git:git@github.com:jline/jline.git</developerConnection>
     <url>https://github.com/jline/jline</url>
   </scm>
   <dependencies>
