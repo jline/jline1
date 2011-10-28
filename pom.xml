@@ -56,6 +56,13 @@ To make a bundle and request that ibilio upload it, do:
   <version>1.0-SNAPSHOT</version>
   <description>JLine is a java library for reading and editing user input in console applications. It features tab-completion, command history, password masking, customizable keybindings, and pass-through handlers to use to chain to other console applications.</description>
   <url>http://jline.sourceforge.net</url>
+
+  <parent>
+    <groupId>org.sonatype.oss</groupId>
+    <artifactId>oss-parent</artifactId>
+    <version>7</version>
+  </parent>
+
   <issueManagement>
     <system>sourceforge</system>
     <url>http://sourceforge.net/tracker/?group_id=64033&amp;atid=506056</url>
