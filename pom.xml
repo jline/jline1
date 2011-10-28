@@ -123,6 +123,7 @@ To make a bundle and request that ibilio upload it, do:
             </goals>
           </execution>
         </executions>
+        <version>1.3</version>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
