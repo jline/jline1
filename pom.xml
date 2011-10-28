@@ -232,19 +232,4 @@ To make a bundle and request that ibilio upload it, do:
       </plugin>
     </plugins>
   </reporting>
-  <distributionManagement>
-    <repository>
-      <id>jline</id>
-      <url>scp://shell.sourceforge.net/home/groups/j/jl/jline/htdocs/m2repo</url>
-    </repository>
-    <snapshotRepository>
-      <id>jline</id>
-      <url>scp://shell.sourceforge.net/home/groups/j/jl/jline/htdocs/m2snapshot</url>
-    </snapshotRepository>
-    <site>
-      <id>jline</id>
-      <name>jline</name>
-      <url>scpexe://shell.sourceforge.net/home/groups/j/jl/jline/htdocs/</url>
-    </site>
-  </distributionManagement>
 </project>
