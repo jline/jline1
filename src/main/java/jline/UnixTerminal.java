@@ -200,7 +200,7 @@ public class UnixTerminal extends Terminal {
         } catch (Exception e) {
         }
 
-        if (val == -1) {
+        if (val <= 0) {
             val = 80;
         }
 
@@ -223,7 +223,7 @@ public class UnixTerminal extends Terminal {
         } catch (Exception e) {
         }
 
-        if (val == -1) {
+        if (val <= 0) {
             val = 24;
         }
 
