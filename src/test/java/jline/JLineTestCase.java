@@ -46,6 +46,21 @@ public abstract class JLineTestCase extends TestCase {
         assertEquals(expected, console.getCursorBuffer().toString());
     }
 
+    public void assertBufferViMode(String expected, Buffer buffer, boolean clear)
+            throws IOException {
+        // clear current buffer, if any
+        if (clear) {
+            console.finishBuffer();
+            console.getHistory().clear();
+        }
+
+        console.getTerminal().enableViMode();
+        console.setInput(new ByteArrayInputStream(buffer.getBytes()));
+
+        assertEquals(expected, console.readLine());
+        console.getTerminal().disableViMode();
+    }
+
     private int getKeyForAction(short logicalAction) {
         int action = console.getKeyForAction(logicalAction);
 

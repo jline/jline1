@@ -323,7 +323,13 @@ public class WindowsTerminal extends Terminal {
     }
 
     public int readVirtualKey(InputStream in) throws IOException {
-        int indicator = readCharacter(in);
+        //int indicator = readCharacter(in);
+        int indicator = 0;
+        if(viModeEnabled()) {
+            indicator = getViParser().parseViInput(in);
+        }
+        else
+            indicator = readCharacter(in);
 
         // in Windows terminals, arrow keys are represented by
         // a sequence of 2 characters. E.g., the up arrow
@@ -358,7 +364,7 @@ public class WindowsTerminal extends Terminal {
             default:
                 return 0;
             }
-        } else if (indicator > 128) {
+        } else if (indicator > 128 && indicator < VI_BINDING_START) {
             	// handle unicode characters longer than 2 bytes,
             	// thanks to Marc.Herbert@continuent.com
                 replayStream.setInput(indicator, in);

@@ -18,6 +18,8 @@ import java.io.*;
  */
 public abstract class Terminal implements ConsoleOperations {
     private static Terminal term;
+    private boolean vimode = false;
+    private ViParser viParser;
 
     /**
      *  @see #setupTerminal
@@ -67,7 +69,7 @@ public abstract class Terminal implements ConsoleOperations {
             }
         } else if (os.indexOf("windows") != -1) {
             t = new WindowsTerminal();
-        } else {
+       } else {
             t = new UnixTerminal();
         }
 
@@ -81,6 +83,29 @@ public abstract class Terminal implements ConsoleOperations {
 
         return term = t;
     }
+
+    boolean viModeEnabled() {
+        return vimode;
+    }
+
+    void enableViMode() {
+        vimode = true;
+        if(viParser == null) {
+            if(term != null)
+                viParser = new ViParser(term);
+            else
+                viParser = new ViParser(this);
+        }
+    }
+
+    void disableViMode() {
+        vimode = false;
+    }
+
+    ViParser getViParser() {
+        return viParser;
+    }
+
 
     /**
      *  Returns true if the current console supports ANSI

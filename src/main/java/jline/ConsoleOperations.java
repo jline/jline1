@@ -16,23 +16,38 @@ import java.awt.event.KeyEvent;
  */
 public interface ConsoleOperations {
     final String CR = System.getProperty("line.separator");
-    final char BACKSPACE = '\b';
-    final char RESET_LINE = '\r';
-    final char KEYBOARD_BELL = '\07';
-    final char CTRL_A = 1;
-    final char CTRL_B = 2;
-    final char CTRL_C = 3;
-    final char CTRL_D = 4;
-    final char CTRL_E = 5;
-    final char CTRL_F = 6;
-    final char CTRL_G = 7;
+    final static char BACKSPACE = '\b';
+    final static char RESET_LINE = '\r';
+    final static char KEYBOARD_BELL = '\07';
+    final static char CTRL_A = 1;
+    final static char CTRL_B = 2;
+    final static char CTRL_C = 3;
+    final static char CTRL_D = 4;
+    final static char CTRL_E = 5;
+    final static char CTRL_F = 6;
+    final static char CTRL_G = 7;
+    final static char CTRL_H = 8;
+    final static char CTRL_I = 9;
     final static char CTRL_K = 11;
     final static char CTRL_L = 12;
-    final char CTRL_N = 14;
-    final char CTRL_P = 16;
+    final static char CTRL_N = 14;
+    final static char CTRL_P = 16;
+    final static char CTRL_U = 21;
+    final static char CTRL_W = 23;
+    final static char CTRL_X = 24; // prev word
     final static char CTRL_OB = 27;
     final static char DELETE = 127;
     final static char CTRL_QM = 127;
+
+    final static char VI_BINDING_START = 10000;
+    final static char CTRL_O = 10025; // next word
+    final static char CTRL_SHIFT_K = 10026; //clear the whole line
+    final static char CTRL_SHIFT_O = 10027; //next space word
+    final static char CTRL_SHIFT_G = 10028; //prev space word
+    final static char CTRL_Z = 10030;
+    final static char TILDE = 10031; // change case
+    final static char VI_PASTE_AFTER = 10032; // paste after
+    final static char VI_PASTE_BEFORE = 10033; // paste before
 
 
     /**
@@ -98,6 +113,16 @@ public interface ConsoleOperations {
      *  Operation that deletes the previous word in the buffer.
      */
     final short DELETE_PREV_WORD = -16;
+
+    /**
+     * Operation that deletes the next word in the buffer.
+     */
+    final short DELETE_NEXT_WORD = -17;
+
+    /**
+     * Operation that changes the next word in the buffer.
+     */
+    final short CHANGE_NEXT_WORD = -18;
 
     /**
      *  Operation that moves to the next character in the buffer.
@@ -278,5 +303,15 @@ public interface ConsoleOperations {
      * Operation that aborts the current command (like searching)
      */
     final static short ABORT = -64;
+
+    /**
+     * Operation that paste the latest action after cursor
+     */
+    final static short PASTE_AFTER = -65;
+
+    /**
+     * Operation that paste the latest action before cursor
+     */
+    final static short PASTE_BEFORE = -66;
 
 }

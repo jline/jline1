@@ -6,6 +6,8 @@
  */
 package jline;
 
+import jline.console.*;
+
 import java.awt.*;
 import java.awt.datatransfer.*;
 import java.awt.event.ActionListener;
@@ -83,11 +85,15 @@ public class ConsoleReader implements ConsoleOperations {
         names.put("UNDO", new Short(UNDO));
         names.put("NEXT_WORD", new Short(NEXT_WORD));
         names.put("DELETE_NEXT_CHAR", new Short(DELETE_NEXT_CHAR));
+        names.put("DELETE_NEXT_WORD", new Short(DELETE_NEXT_WORD));
+        names.put("CHANGE_NEXT_WORD", new Short(CHANGE_NEXT_WORD));
         names.put("CHANGE_CASE", new Short(CHANGE_CASE));
         names.put("COMPLETE", new Short(COMPLETE));
         names.put("EXIT", new Short(EXIT));
         names.put("CLEAR_LINE", new Short(CLEAR_LINE));
         names.put("ABORT", new Short(ABORT));
+        names.put("PASTE_AFTER", new Short(PASTE_AFTER));
+        names.put("PASTE_BEFORE", new Short(PASTE_BEFORE));
 
         KEYMAP_NAMES = new TreeMap(Collections.unmodifiableMap(names));
     }
@@ -118,7 +124,7 @@ public class ConsoleReader implements ConsoleOperations {
     /**
      * The Terminal to use.
      */
-    private final Terminal terminal;
+    private Terminal terminal;
     private CompletionHandler completionHandler = new CandidateListCompletionHandler();
     InputStream in;
     final Writer out;
@@ -132,6 +138,9 @@ public class ConsoleReader implements ConsoleOperations {
     private StringBuffer searchTerm = null;
     private String previousSearchTerm = "";
     private int searchIndex = -1;
+
+    private UndoManager undoManager;
+    private PasteManager pasteManager;
 
     /**
      * Adding a triggered Action allows to give another course of action
@@ -156,8 +165,8 @@ public class ConsoleReader implements ConsoleOperations {
     public ConsoleReader() throws IOException {
         this(new FileInputStream(FileDescriptor.in),
                 new PrintWriter(
-                new OutputStreamWriter(System.out,
-                System.getProperty("jline.WindowsTerminal.output.encoding", System.getProperty("file.encoding")))));
+                        new OutputStreamWriter(System.out,
+                                System.getProperty("jline.WindowsTerminal.output.encoding", System.getProperty("file.encoding")))));
     }
 
     /**
@@ -207,6 +216,9 @@ public class ConsoleReader implements ConsoleOperations {
                 }
             }
         }
+
+        undoManager = new UndoManager();
+        pasteManager = new PasteManager();
 
         if (bindings == null) {
             bindings = terminal.getDefaultBindings();
@@ -459,6 +471,7 @@ public class ConsoleReader implements ConsoleOperations {
 
     /**
      * The default prompt that will be issued.
+     * @param prompt
      */
     public void setDefaultPrompt(String prompt) {
         this.prompt = prompt;
@@ -466,6 +479,7 @@ public class ConsoleReader implements ConsoleOperations {
 
     /**
      * The default prompt that will be issued.
+     * @return prompt
      */
     public String getDefaultPrompt() {
         return prompt;
@@ -475,13 +489,13 @@ public class ConsoleReader implements ConsoleOperations {
      * Read a line from the <i>in</i> {@link InputStream}, and return the line
      * (without any trailing newlines).
      *
-     * @param prompt
-     *            the prompt to issue to the console, may be null.
+     * @param prompt the prompt to issue to the console, may be null.
+     * @param mask
      * @return a line that is read from the terminal, or null if there was null
      *         input (e.g., <i>CTRL-D</i> was pressed).
+     * @throws java.io.IOException
      */
-    public String readLine(final String prompt, final Character mask)
-            throws IOException {
+    public String readLine(final String prompt, final Character mask) throws IOException {
         this.mask = mask;
         if (prompt != null) {
             this.prompt = prompt;
@@ -604,44 +618,54 @@ public class ConsoleReader implements ConsoleOperations {
                             break;
 
                         case MOVE_TO_BEG:
-                            success = setCursorPosition(0);
+                            success = performAction(new SimpleAction(buf.cursor, getAction(), 0));
                             break;
 
                         case KILL_LINE: // CTRL-K
-                            success = killLine();
+                            success = performAction(new SimpleAction(buf.cursor, Action.DELETE, buf.length()));
                             break;
 
                         case CLEAR_SCREEN: // CTRL-L
+                            addActionToUndoStack();
                             success = clearScreen();
                             break;
 
                         case KILL_LINE_PREV: // CTRL-U
-                            success = resetLine();
+                            success = performAction(new SimpleAction(buf.cursor, Action.DELETE, 0));
                             break;
 
                         case NEWLINE: // enter
+                            // clear the undo stack for each new line
+                            clearUndoStack();
                             moveToEnd();
                             printNewline(); // output newline
-                            return finishBuffer();
+                            String outBuffer = finishBuffer();
+                            if(!matchInternalCommand(outBuffer))
+                                return outBuffer;
+                            else {
+                                drawLine();
+                                break;
+                            }
+
 
                         case DELETE_PREV_CHAR: // backspace
-                            success = backspace();
+                            success = performAction(new DeleteAction(buf.cursor, Action.DELETE, true));
                             break;
 
                         case DELETE_NEXT_CHAR: // delete
-                            success = deleteCurrentCharacter();
+                            success = performAction(new DeleteAction(buf.cursor, Action.DELETE));
                             break;
 
                         case MOVE_TO_END:
-                            success = moveToEnd();
+                            success = performAction(new SimpleAction(buf.cursor, getAction(), buf.length()));
                             break;
 
                         case PREV_CHAR:
-                            success = moveCursor(-1) != 0;
+                            success = performAction(new SimpleAction(buf.cursor, getAction(), buf.cursor-1));
                             break;
 
                         case NEXT_CHAR:
-                            success = moveCursor(1) != 0;
+                            success = performAction(new SimpleAction(buf.cursor, getAction(), buf.cursor+1));
                             break;
 
                         case NEXT_HISTORY:
@@ -653,23 +677,46 @@ public class ConsoleReader implements ConsoleOperations {
                             break;
 
                         case ABORT:
+
                         case REDISPLAY:
                             break;
 
                         case PASTE:
+                            addActionToUndoStack();
                             success = paste();
                             break;
 
+                        case DELETE_NEXT_WORD:
+                            success = performAction(new NextWordAction(buf.cursor, Action.DELETE));
+                            break;
+
+                        case CHANGE_NEXT_WORD:
+                            success = performAction(new NextWordAction(buf.cursor, getAction()));
+                            break;
+
                         case DELETE_PREV_WORD:
-                            success = deletePreviousWord();
+                            success = performAction(new PrevWordAction(buf.cursor, Action.DELETE));
                             break;
 
                         case PREV_WORD:
-                            success = previousWord();
+                            success = performAction(new PrevWordAction(buf.cursor, getAction()));
+                            break;
+
+                        case PREV_SPACE_WORD:
+                            success = performAction(new PrevSpaceWordAction(buf.cursor, getAction()));
                             break;
 
                         case NEXT_WORD:
-                            success = nextWord();
+                            success = performAction(new NextWordAction(buf.cursor, getAction()));
+                            break;
+
+                        case NEXT_SPACE_WORD:
+                            success = performAction(new NextSpaceWordAction(buf.cursor, getAction()));
+                            break;
+
+                        case CHANGE_CASE:
+                            addActionToUndoStack();
+                            success = changeCase();
                             break;
 
                         case START_OF_HISTORY:
@@ -687,8 +734,19 @@ public class ConsoleReader implements ConsoleOperations {
                             break;
 
                         case CLEAR_LINE:
-                            moveInternal(-(buf.buffer.length()));
-                            killLine();
+                            success = performAction(new SimpleAction(0, getAction(), buf.length()));
+                            break;
+
+                        case UNDO:
+                            success = undo();
+                            break;
+
+                        case PASTE_BEFORE:
+                            success = doPaste(0, true);
+                            break;
+
+                        case PASTE_AFTER:
+                            success = doPaste(0, false);
                             break;
 
                         case INSERT:
@@ -721,6 +779,9 @@ public class ConsoleReader implements ConsoleOperations {
                                 if (action != null) {
                                     action.actionPerformed(null);
                                 } else {
+                                    if(!undoManager.isEmpty()) {
+                                        addActionToUndoStack();
+                                    }
                                     putChar(c, true);
                                 }
                             } else {
@@ -728,7 +789,7 @@ public class ConsoleReader implements ConsoleOperations {
                             }
                     }
 
-                    if (!(success)) {
+                   if (!(success)) {
                         beep();
                     }
 
@@ -738,6 +799,28 @@ public class ConsoleReader implements ConsoleOperations {
         } finally {
             terminal.afterReadLine(this, this.prompt, mask);
         }
+    }
+
+    /**
+     * Check if out buffer match an internal command
+     * Internal commands:
+     * vi-mode - enables vi key bindings
+     * emacs-mode - enables emacs key bindings (default)
+     *
+     * @param outBuffer
+     * @return
+     */
+   private boolean matchInternalCommand(String outBuffer) {
+       if(outBuffer.equals("vi-mode")) {
+           terminal.enableViMode();
+           return true;
+       }
+       else if(outBuffer.equals("emacs-mode")) {
+           terminal.disableViMode();
+           return true;
+       }
+       else
+           return false;
     }
 
     private String readLine(InputStream in) throws IOException {
@@ -770,6 +853,8 @@ public class ConsoleReader implements ConsoleOperations {
         // extract the appropriate key binding
         short code = keybindings[c];
 
+//        if(code != -99)
+//            System.out.println("    translated: " + (int) c +": "+(char) c+ ": " + code);
         if (debugger != null) {
             // debug("    translated: " + (int) c + ": " + code);
         }
@@ -1454,40 +1539,72 @@ public class ConsoleReader implements ConsoleOperations {
         return true;
     }
 
-    private final boolean previousWord() throws IOException {
-        while (isDelimiter(buf.current()) && (moveCursor(-1) != 0)) {
-            ;
-        }
 
-        while (!isDelimiter(buf.current()) && (moveCursor(-1) != 0)) {
-            ;
+    /**
+     * Perform the designated action created by an event
+     *
+     * @param action
+     * @return true if nothing goes wrong
+     * @throws IOException
+     */
+    private final boolean performAction(ConsoleAction action) throws IOException {
+        action.doAction(buf.getBuffer());
+        if(action.getAction() == Action.MOVE) {
+            moveInternal((action.getEnd()-action.getStart()));
+            return true;
+        }
+        else if(action.getAction() == Action.DELETE ||
+                action.getAction() == Action.CHANGE) {
+            //first trigger undo action
+            addActionToUndoStack();
+
+            if(action.getEnd() > action.getStart()) {
+                // only if start != cursor we need to move it
+                if(action.getStart() != buf.cursor) {
+                    moveInternal(action.getStart()-buf.cursor);
+                }
+                addToPaste(buf.buffer.substring(action.getStart(), action.getEnd()));
+                buf.buffer.delete(action.getStart(), action.getEnd());
+            }
+            else {
+                addToPaste(buf.buffer.substring(action.getEnd(), action.getStart()));
+                buf.buffer.delete(action.getEnd(), action.getStart());
+                moveInternal((action.getEnd()-action.getStart()));
+            }
+            drawBuffer(1);
+        }
+        else if(action.getAction() == Action.YANK) {
+            if(action.getEnd() > action.getStart()) {
+                addToPaste(buf.buffer.substring(action.getStart(), action.getEnd()));
+            }
+            else {
+                addToPaste(buf.buffer.substring(action.getEnd(), action.getStart()));
+            }
         }
 
         return true;
     }
 
-    private final boolean nextWord() throws IOException {
-        while (isDelimiter(buf.current()) && (moveCursor(1) != 0)) {
-            ;
+    private final int getAction() {
+        if(terminal.viModeEnabled()) {
+            if(terminal.getViParser().isDeleteMode()) {
+                terminal.getViParser().setDeleteMode(false);
+                return Action.DELETE;
+            }
+            else if(terminal.getViParser().isChangeMode()) {
+                terminal.getViParser().switchEditMode();
+                return Action.CHANGE;
+            }
+            else if(terminal.getViParser().isYankMode()) {
+                terminal.getViParser().setYankMode(false);
+                return Action.YANK;
+            }
+            else
+                return Action.MOVE;
         }
-
-        while (!isDelimiter(buf.current()) && (moveCursor(1) != 0)) {
-            ;
-        }
-
-        return true;
-    }
-
-    private final boolean deletePreviousWord() throws IOException {
-        while (isDelimiter(buf.current()) && backspace()) {
-            ;
-        }
-
-        while (!isDelimiter(buf.current()) && backspace()) {
-            ;
-        }
-
-        return true;
+        //emacs-mode
+        else
+            return Action.MOVE;
     }
 
     /**
@@ -1627,46 +1744,6 @@ public class ConsoleReader implements ConsoleOperations {
         return c;
     }
 
-    /**
-     *  Issue <em>num</em> deletes.
-     *
-     *  @return  the number of characters backed up
-     */
-    private final int delete(final int num)
-            throws IOException {
-        /* Commented out beacuse of DWA-2949:
-        if (buf.cursor == 0)
-        return 0;*/
-
-        buf.buffer.delete(buf.cursor, buf.cursor + 1);
-        drawBuffer(1);
-
-        return 1;
-    }
-
-    public final boolean replace(int num, String replacement) {
-        buf.buffer.replace(buf.cursor - num, buf.cursor, replacement);
-        try {
-            moveCursor(-num);
-            drawBuffer(Math.max(0, num - replacement.length()));
-            moveCursor(replacement.length());
-        } catch (IOException e) {
-            e.printStackTrace();
-            return false;
-        }
-        return true;
-    }
-
-    /**
-     *  Issue a delete.
-     *
-     *  @return  true if successful
-     */
-    public final boolean delete()
-            throws IOException {
-        return delete(1) == 1;
-    }
-
     public void setHistory(final History history) {
         this.history = history;
     }
@@ -1730,17 +1807,6 @@ public class ConsoleReader implements ConsoleOperations {
     private void consumeException(final Throwable e) {
     }
 
-    /**
-     * Checks to see if the specified character is a delimiter. We consider a
-     * character a delimiter if it is anything but a letter or digit.
-     *
-     * @param c
-     *            the character to test
-     * @return true if it is a delimiter
-     */
-    private boolean isDelimiter(char c) {
-        return !Character.isLetterOrDigit(c);
-    }
 
     private void printANSISequence(String sequence) throws IOException {
         printCharacter(27);
@@ -1749,33 +1815,24 @@ public class ConsoleReader implements ConsoleOperations {
         flushConsole();
     }
 
-    /*
-    private int currentCol, currentRow;
+    /**
+     * Switch case if the character is a letter
+     *
+     */
+    private boolean changeCase() throws IOException {
+        char c = buf.buffer.charAt(buf.cursor);
+        if(Character.isLetter(c)) {
+            if(Character.isLowerCase(c))
+                buf.buffer.setCharAt(buf.cursor, Character.toUpperCase(c));
+            else
+                buf.buffer.setCharAt(buf.cursor, Character.toLowerCase(c));
 
-    private void getCurrentPosition() {
-        // check for ByteArrayInputStream to disable for unit tests
-        if (terminal.isANSISupported() && !(in instanceof ByteArrayInputStream)) {
-            try {
-                printANSISequence("[6n");
-                flushConsole();
-                StringBuffer b = new StringBuffer(8);
-                // position is sent as <ESC>[{ROW};{COLUMN}R
-                int r;
-                while((r = in.read()) > -1 && r != 'R') {
-                    if (r != 27 && r != '[') {
-                        b.append((char) r);
-                    }
-                }
-                String[] pos = b.toString().split(";");
-                currentRow = Integer.parseInt(pos[0]);
-                currentCol = Integer.parseInt(pos[1]);
-            } catch (Exception x) {
-                // no luck
-                currentRow = currentCol = -1;
-            }
+            moveCursor(1);
+            redrawLine();
         }
+
+        return true;
     }
-    */
 
     /**
      * Whether or not to add new commands to the history buffer.
@@ -1819,5 +1876,78 @@ public class ConsoleReader implements ConsoleOperations {
         printString("\u001b[2K"); // ansi/vt100 for clear whole line
         redrawLine();
         flushConsole();
+    }
+
+    /**
+     * Perform an undo
+     *
+     * @return true if nothing fails
+     * @throws IOException if redraw fails
+     */
+    private boolean undo() throws IOException {
+        UndoAction ua = undoManager.getNext();
+        if(ua != null) {
+            setCursorPosition(0);
+            killLine();
+            this.buf.clearBuffer();
+            this.buf.write(ua.getBuffer());
+            printCharacter(RESET_LINE);
+            flushConsole();
+            if (prompt != null) {
+                printString(prompt);
+            }
+            printString(buf.buffer.toString());
+            setCursorPosition(ua.getCursorPosition()-prompt.length());
+
+            return true;
+        }
+        else
+            return false;
+    }
+
+    /**
+     * Add current text and cursor position to the undo stack
+     *
+     * @throws IOException if getCursorPosition() fails
+     */
+    private void addActionToUndoStack() throws IOException {
+        UndoAction ua = new UndoAction(getCursorPosition(), this.buf.getBuffer().toString());
+        undoManager.addUndo(ua);
+    }
+
+
+    private void clearUndoStack() {
+        undoManager.clear();
+    }
+
+    private void addToPaste(String buffer) {
+        pasteManager.addText(new StringBuffer(buffer));
+    }
+
+    /**
+     * Paste previous yanked word/char either before or on the cursor position
+     *
+     * @param index which yank index
+     * @param before cursor
+     * @return true if everything went as expected
+     * @throws IOException if redraw failed
+     */
+    private boolean doPaste(int index, boolean before) throws IOException {
+        StringBuffer pasteBuffer = pasteManager.get(index);
+        if(pasteBuffer == null)
+            return false;
+
+        addActionToUndoStack();
+        if(before || buf.cursor >= buf.buffer.length()) {
+            buf.buffer.insert(buf.cursor, pasteBuffer);
+            drawBuffer(1);
+        }
+        else {
+            buf.buffer.insert(buf.cursor+1, pasteBuffer);
+            drawBuffer(1);
+            //move cursor one char
+            moveCursor(1);
+        }
+        return true;
     }
 }
