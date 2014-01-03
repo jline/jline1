@@ -280,7 +280,7 @@ public class ConsoleReader implements ConsoleOperations {
      * Read the next line and return the contents of the buffer.
      */
     public String readLine() throws IOException {
-        return readLine((String) null);
+        return readLine(prompt);
     }
 
     /**
@@ -288,7 +288,7 @@ public class ConsoleReader implements ConsoleOperations {
      * characters will be echoed. If 0, then no characters will be echoed.
      */
     public String readLine(final Character mask) throws IOException {
-        return readLine(null, mask);
+        return readLine(prompt, mask);
     }
 
     /**
