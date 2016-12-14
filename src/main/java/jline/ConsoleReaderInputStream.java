@@ -74,7 +74,7 @@ public class ConsoleReaderInputStream extends SequenceInputStream {
 
     private static class ConsoleLineInputStream extends InputStream {
         private final ConsoleReader reader;
-        private String line = null;
+        private byte[] line;
         private int index = 0;
         private boolean eol = false;
         protected boolean wasNull = false;
@@ -89,7 +89,15 @@ public class ConsoleReaderInputStream extends SequenceInputStream {
             }
 
             if (line == null) {
-                line = reader.readLine();
+                //reader will read in correctly with proper encoding
+                String sline = reader.readLine();
+
+                if (sline == null) {
+                    line = null;
+                } else {
+                    //TODO use same encoding as Unix/WindowsTerminal or ConsoleReader
+                    line = sline.getBytes();
+                }
             }
 
             if (line == null) {
@@ -97,12 +105,15 @@ public class ConsoleReaderInputStream extends SequenceInputStream {
                 return -1;
             }
 
-            if (index >= line.length()) {
+            if (index >= line.length) {
                 eol = true;
                 return '\n'; // lines are ended with a newline
             }
 
-            return line.charAt(index++);
+            //InputStreams work with bytes, so we can't
+            //return a char that may not fit into one byte
+            //for multibyte chars, this will return each byte in turn
+            return line[index++];
         }
     }
 }
