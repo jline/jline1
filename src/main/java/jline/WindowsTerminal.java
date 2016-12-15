@@ -273,18 +273,20 @@ public class WindowsTerminal extends Terminal {
         }
 
         version = version.replace('.', '_');
-
-        File f = new File(System.getProperty("java.io.tmpdir"), name + "_"
-                + version + ".dll");
-        boolean exists = f.isFile(); // check if it already exists
-
+        
         // extract the embedded jline.dll file from the jar and save
         // it to the current directory
         int bits = 32;
 
         // check for 64-bit systems and use to appropriate DLL
         if (System.getProperty("os.arch").indexOf("64") != -1)
-            bits = 64;
+            bits = 64;        
+
+        File f = new File(System.getProperty("java.io.tmpdir"), name + "_"
+                + version + "_" + bits + ".dll");
+                
+        boolean exists = f.isFile(); // check if it already exists
+
 
         InputStream in = new BufferedInputStream(WindowsTerminal.class.getResourceAsStream(name + bits + ".dll"));
 
